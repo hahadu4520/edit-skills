@@ -1,0 +1,8 @@
+{
+  "name": "koubo-edit",
+  "description": "口播剪辑：粗剪去停顿口误、整条字幕（可中英双语）、花字和编号清单、限流词哔声打码、3 版 3:4 封面。",
+  "version": "1.0.0",
+  "author": {
+    "name": "hahadu"
+  }
+}

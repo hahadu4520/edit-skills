@@ -30,7 +30,9 @@ try { npm init -y | Out-Null; npm install --silent playwright; npx playwright in
 Pop-Location
 
 Write-Host "⑤ 让 Claude Code、Codex 和其他 Agent 都能找到这个技能 …"
-foreach ($d in @(".claude\skills", ".codex\skills", ".agents\skills")) {
+$Dirs = @(".claude\skills", ".codex\skills", ".agents\skills")
+if ($Dest -like "*\.claude\plugins\*") { $Dirs = $Dirs[1..2] }  # 通过插件市场安装时 Claude Code 已能找到
+foreach ($d in $Dirs) {
   $dir = Join-Path $HOME $d; New-Item -ItemType Directory -Force -Path $dir | Out-Null
   $link = Join-Path $dir $Name
   if (($link -ne $Dest) -and -not (Test-Path $link)) { New-Item -ItemType Junction -Path $link -Target $Dest | Out-Null; Write-Host "   已链接 $link" }
