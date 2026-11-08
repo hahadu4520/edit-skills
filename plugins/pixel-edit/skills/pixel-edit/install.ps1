@@ -1,4 +1,4 @@
-# 像素风剪辑技能一键安装（Windows 10/11）：powershell -ExecutionPolicy Bypass -File install.ps1
+﻿# 像素风剪辑技能一键安装（Windows 10/11）：powershell -ExecutionPolicy Bypass -File install.ps1
 $ErrorActionPreference = "Stop"
 $Src = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Name = "pixel-edit"
@@ -15,7 +15,7 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 if ($Src -ne $Dest) {
   Write-Host "② 复制技能到 $Dest …"
   New-Item -ItemType Directory -Force -Path $Dest | Out-Null
-  foreach ($f in @("SKILL.md","AGENTS.md","README.md","install.sh","install.ps1","scripts","screenshots","fonts","examples")) { Copy-Item -Recurse -Force (Join-Path $Src $f) $Dest }
+  foreach ($f in @("SKILL.md","AGENTS.md","README.md","install.sh","install.ps1","check.sh","check.ps1","scripts","screenshots","fonts","examples")) { Copy-Item -Recurse -Force (Join-Path $Src $f) $Dest }
 }
 
 Write-Host "③ 创建独立的 Python 环境，安装 numpy、pillow、sherpa-onnx …"

@@ -28,7 +28,7 @@ done
 if [ "$SRC" != "$DEST" ]; then
   echo "② 复制技能到 $DEST …"
   mkdir -p "$DEST"
-  cp -R SKILL.md AGENTS.md README.md install.sh install.ps1 scripts screenshots fonts examples "$DEST/"
+  cp -R SKILL.md AGENTS.md README.md install.sh install.ps1 check.sh check.ps1 scripts screenshots fonts examples "$DEST/"
 fi
 
 echo "③ 创建独立的 Python 环境，安装 numpy、pillow、sherpa-onnx …"

@@ -25,7 +25,7 @@ if (-not $Py -or (& python --version 2>&1) -notmatch "Python 3") {
 if ($Src -ne $Dest) {
     Write-Host "② 复制技能到 $Dest …"
     New-Item -ItemType Directory -Force -Path $Dest | Out-Null
-    foreach ($f in "SKILL.md","AGENTS.md","README.md","install.sh","install.ps1","config.example.json","en.example.json","scripts","fonts") {
+    foreach ($f in "SKILL.md","AGENTS.md","README.md","install.sh","install.ps1","check.sh","check.ps1","config.example.json","en.example.json","scripts","fonts") {
         Copy-Item -Recurse -Force (Join-Path $Src $f) $Dest
     }
 }

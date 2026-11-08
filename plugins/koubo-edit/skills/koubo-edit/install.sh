@@ -30,7 +30,7 @@ fi
 if [ "$SRC" != "$DEST" ]; then
   echo "② 复制技能到 $DEST …"
   mkdir -p "$DEST"
-  cp -R SKILL.md AGENTS.md README.md install.sh install.ps1 config.example.json en.example.json scripts fonts "$DEST/"
+  cp -R SKILL.md AGENTS.md README.md install.sh install.ps1 check.sh check.ps1 config.example.json en.example.json scripts fonts "$DEST/"
 fi
 
 # 语音转写：Apple 芯片 Mac 用 mlx-whisper（快），其他电脑用 faster-whisper

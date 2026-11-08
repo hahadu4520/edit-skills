@@ -5,6 +5,13 @@ description: 「朴素版口播」口播视频剪辑流水线：粗剪（去停�
 
 # 朴素版口播（口播剪辑流水线）
 
+## 第 0 步：先自检依赖（每次开始剪辑前都做）
+
+运行 `bash <SKILL>/check.sh`（Windows：`powershell -ExecutionPolicy Bypass -File <SKILL>\check.ps1`），`<SKILL>` 是本文件所在目录。
+- 输出 OK：直接开始。
+- 缺东西：**不要只告诉用户缺依赖，也不要让用户自己去装**。直接运行 `bash <SKILL>/install.sh`（Windows：`install.ps1`）把缺的全部装好，装完再跑一次 check 确认。安装要 5–15 分钟，开始前跟用户说一声“第一次用，先帮你装好依赖，大约 10 分钟”。
+- 安装本身失败（比如没装 Homebrew、网络下载不下来）：把报错原文和下一步要用户做的那一件事告诉用户，别的都替用户做掉。
+
 所有每期要判断的内容都写在 `<workdir>/config.json`，脚本只读配置。样板：`config.example.json`（11225《除了 A 股以外都有》的完整配置）、`en.example.json`（对应英文字幕）。
 
 下面的 `<SKILL>` 指这个 SKILL.md 所在的目录（Claude Code、Codex 等 Agent 都可能把它装在 `~/.claude/skills/koubo-edit`、`~/.codex/skills/koubo-edit` 或 `~/.agents/skills/koubo-edit`，这几个位置是同一份）。
@@ -17,7 +24,7 @@ workdir:  ~/Downloads/<id>_work      # 每期一个工作目录，config.json �
 
 用任何 python 启动都行，脚本会自动切换到技能自带的 venv。下文写成 `koubo <命令>`。
 
-依赖：ffmpeg 和技能自带的 venv。如果 `<SKILL>/venv` 不存在，先让用户安装：macOS 运行 `bash <SKILL>/install.sh`，Windows 运行 `powershell -ExecutionPolicy Bypass -File <SKILL>\install.ps1`。
+依赖：ffmpeg 和技能自带的 venv，见上面第 0 步。
 
 - **语音转写**：Apple 芯片 Mac 用 mlx-whisper，其他电脑（Windows、Intel Mac）用 faster-whisper，脚本会自动选择。Windows 没有 NVIDIA 显卡时，转写会比较慢，一条 6 分钟的视频大约要 5 到 15 分钟。
 - **视频编码**：Mac 用 VideoToolbox，NVIDIA 显卡用 NVENC，其他情况用 libx264，也是自动选择。
