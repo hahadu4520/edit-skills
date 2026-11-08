@@ -1,5 +1,5 @@
 #!/bin/bash
-# 口播剪辑技能一键安装（macOS / Linux）：bash install.sh
+# 朴素版口播技能一键安装（macOS / Linux）：bash install.sh
 # Windows 请用 install.ps1
 set -e
 cd "$(dirname "$0")"

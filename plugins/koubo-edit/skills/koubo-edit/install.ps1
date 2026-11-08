@@ -1,4 +1,4 @@
-﻿# 口播剪辑技能一键安装（Windows）
+﻿# 朴素版口播技能一键安装（Windows）
 # 用法：在 PowerShell 里运行
 #   powershell -ExecutionPolicy Bypass -File install.ps1
 $ErrorActionPreference = "Stop"

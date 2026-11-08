@@ -4,10 +4,10 @@
 
 | 风格 | 一句话 | 说明 |
 |---|---|---|
-| 口播剪辑 `koubo-edit` | 竖屏口播粗剪（去停顿、口误、重复）、字幕和中英双语、花字和清单、限流词哔声打码、3:4 封面 | [README](plugins/koubo-edit/skills/koubo-edit/README.md) |
+| 朴素版口播 `koubo-edit` | 竖屏口播粗剪（去停顿、口误、重复）、字幕和中英双语、花字和清单、限流词哔声打码、3:4 封面 | [README](plugins/koubo-edit/skills/koubo-edit/README.md) |
 | 像素风剪辑 `pixel-edit` | 真人口播 + 星露谷式像素 B-roll、像素 Agent 界面；竖版、双语横版、各平台封面 | [README](plugins/pixel-edit/skills/pixel-edit/README.md) |
 
-两个可以连着用：先用口播剪辑粗剪、出字幕，再用像素风剪辑加像素画面。
+两个可以连着用：先用朴素版口播粗剪、出字幕，再用像素风剪辑加像素画面。
 
 ## 安装
 
@@ -21,7 +21,7 @@
 /plugin install pixel-edit@hahadu-edit-skills
 ```
 
-想用哪个装哪个。第一次用时对它说“帮我安装口播剪辑（或像素风剪辑）的依赖”，它会运行技能目录里的 `install.sh`（Windows 是 `install.ps1`），准备 ffmpeg、Python 环境和模型。
+想用哪个装哪个。第一次用时对它说“帮我安装朴素版口播（或像素风剪辑）的依赖”，它会运行技能目录里的 `install.sh`（Windows 是 `install.ps1`），准备 ffmpeg、Python 环境和模型。
 
 更新：`/plugin marketplace update hahadu-edit-skills`。
 

@@ -1,4 +1,4 @@
-# 口播剪辑技能（koubo-edit）
+# 朴素版口播（koubo-edit）
 
 让 Claude Code、Codex 等 AI Agent 帮你剪竖屏口播视频：
 
@@ -20,7 +20,7 @@
 
 ## 安装（只需一次，约 5 到 15 分钟）
 
-见仓库首页 [README](../../../../README.md)：Claude Code 用插件市场一键装；其他 Agent 运行 `bash install.sh koubo-edit`（Windows：`install.ps1 koubo-edit`）。装好后会自动运行本目录的 `install.sh` / `install.ps1`，准备 ffmpeg、Python 环境和转写模型；通过插件市场安装的，第一次用时对 Agent 说“帮我安装口播剪辑的依赖”。
+见仓库首页 [README](../../../../README.md)：Claude Code 用插件市场一键装；其他 Agent 运行 `bash install.sh koubo-edit`（Windows：`install.ps1 koubo-edit`）。装好后会自动运行本目录的 `install.sh` / `install.ps1`，准备 ffmpeg、Python 环境和转写模型；通过插件市场安装的，第一次用时对 Agent 说“帮我安装朴素版口播的依赖”。
 
 ## 使用
 
