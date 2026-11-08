@@ -1,0 +1,21 @@
+@font-face{font-family:SH;src:url(../fonts/SourceHanSansSC-Regular.otf);font-weight:400}
+@font-face{font-family:SH;src:url(../fonts/SourceHanSansSC-Medium.otf);font-weight:500}
+@font-face{font-family:SH;src:url(../fonts/SourceHanSansSC-Bold.otf);font-weight:700}
+*{box-sizing:border-box}html,body{margin:0}
+body{width:492px;font:14px/1.6 SH,sans-serif;color:#2b2622;background:#fbf8f3}
+.bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #ebe4da;background:#f6f1ea;font-size:12.5px;color:#8a7f76}
+.bar img{width:22px;image-rendering:pixelated}.bar b{color:#2b2622;font-weight:500}
+.bar .dot{margin-left:auto;display:flex;gap:5px}.bar .dot i{width:9px;height:9px;border-radius:50%;background:#e2d9cd;display:block}
+.chat{padding:14px 16px 10px}
+.u{margin:0 0 12px auto;max-width:82%;background:#ece6dd;border-radius:14px;padding:8px 12px;width:fit-content}
+.a{margin:0 0 10px;max-width:96%}
+.tool{margin:6px 0 8px;border:1px solid #e3dbcf;border-radius:10px;overflow:hidden;font:12.5px/1.55 ui-monospace,Menlo,monospace}
+.tool .h{background:#f1ebe2;padding:4px 10px;color:#8a7f76;font:500 11.5px SH}
+.tool pre{margin:0;padding:7px 10px;background:#2d2833;color:#e9e4f2;white-space:pre-wrap}
+mark{background:transparent;color:#2b2622;padding:0 2px;border-radius:2px}
+.in{margin:4px 16px 14px;border:1px solid #e0d7ca;border-radius:12px;padding:8px 12px;color:#b3a89d;background:#fff;display:flex;justify-content:space-between}
+.in span.s{background:#e8623e;color:#fff;border-radius:7px;padding:0 9px;font-size:12px}
+.chip{background:#e8f0ff;color:#3b64c8;border-radius:5px;padding:0 4px;font-weight:500}
+.link{display:flex;align-items:center;gap:8px;border:1px solid #e3dbcf;border-radius:10px;padding:7px 10px;margin:6px 0 8px;background:#fff;font:13px ui-monospace,Menlo,monospace}
+.link i{width:14px;height:14px;border-radius:50%;background:#24292f;display:block}
+body.h1 mark[data-k="1"],body.h2 mark{background:#ffe248;color:#2b2622}

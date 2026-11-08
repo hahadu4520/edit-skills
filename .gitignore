@@ -1,0 +1,11 @@
+**/venv/
+**/work/
+**/node_modules/
+**/screenshots/package*.json
+**/screenshots/*.png
+!**/screenshots/mascot.png
+**/screenshots/meta.json
+**/scripts/_r16_pad*.py
+**/__pycache__/
+**/*.mp4
+**/*.mov

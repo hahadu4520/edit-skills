@@ -1,0 +1,13 @@
+{
+  "name": "hahadu-edit-skills",
+  "owner": { "name": "hahadu" },
+  "metadata": { "description": "hahadu 的视频剪辑技能合集：每种剪辑风格一个插件。" },
+  "plugins": [
+    {
+      "name": "pixel-edit",
+      "source": "./plugins/pixel-edit",
+      "description": "像素风剪辑：给真人口播加星露谷式像素 B-roll、像素 Agent 界面，出竖版、横版双语和各平台封面。",
+      "version": "1.0.0"
+    }
+  ]
+}

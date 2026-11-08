@@ -1,0 +1,992 @@
+[
+[
+0,
+1.4,
+"GitHub和Git到底是什么",
+"What exactly are GitHub and Git?"
+],
+[
+1.42,
+3.0,
+"它们之间到底有什么区别",
+"And how are they different?"
+],
+[
+3.03,
+4.67,
+"大家在开始用AI做coding",
+"When you start coding with AI"
+],
+[
+4.67,
+6.23,
+"或者做工作流项目的时候",
+"or building workflow projects,"
+],
+[
+6.23,
+8.3,
+"肯定都会遇到过这两个名词",
+"you've surely run into these two terms."
+],
+[
+8.4,
+11.27,
+"它们是我们用agent做长任务",
+"They're two essential tools for long tasks"
+],
+[
+11.27,
+13.33,
+"复杂任务必备的两个工具",
+"and complex tasks with an agent."
+],
+[
+13.33,
+15.0,
+"但我知道有很多零基础",
+"But I know a lot of beginners,"
+],
+[
+15.0,
+16.4,
+"还有文科生背景的宝子们",
+"especially folks with a humanities background,"
+],
+[
+16.4,
+17.53,
+"其实对这两个名词",
+"find these two terms"
+],
+[
+17.53,
+18.77,
+"都感到的一头雾水",
+"totally confusing,"
+],
+[
+18.77,
+20.93,
+"觉得他们特别的技术很难",
+"and think they're super technical and hard."
+],
+[
+21.0,
+22.7,
+"但是你其实真的不用害怕",
+"But honestly, there's nothing to be afraid of."
+],
+[
+22.7,
+23.83,
+"用起来一点都不复杂",
+"They're not complicated at all."
+],
+[
+23.83,
+24.53,
+"今天这条视频",
+"In this video,"
+],
+[
+24.53,
+26.2,
+"我们就用3分钟跟大家讲",
+"I'll take 3 minutes to explain"
+],
+[
+26.2,
+28.53,
+"清楚GitHub和Git到底是什么",
+"what GitHub and Git actually are,"
+],
+[
+28.53,
+29.8,
+"它们有什么作用",
+"what they're for,"
+],
+[
+29.87,
+31.7,
+"以及在你们做项目的过程里面",
+"and how you should actually use them"
+],
+[
+31.7,
+33.5,
+"到底要怎么样使用它们",
+"in your own projects."
+],
+[
+33.6,
+35.6,
+"OK那我们先一句话讲清楚哈",
+"OK, let's start with one sentence."
+],
+[
+35.63,
+37.23,
+"那Git其实就是我们给AI",
+"Git is basically the tool we use"
+],
+[
+37.23,
+38.43,
+"项目做存档的工具",
+"to save our AI projects,"
+],
+[
+38.43,
+40.77,
+"跟我最近打星露谷物语的时候点",
+"exactly like the save button I hit"
+],
+[
+40.77,
+43.6,
+"的那个存档的作用是一模一样的",
+"when I'm playing Stardew Valley."
+],
+[
+43.7,
+44.83,
+"Git它的存档呢",
+"But Git's saves"
+],
+[
+44.83,
+47.9,
+"其实只是放在你电脑本地的项目文件夹里",
+"just live in a local folder on your computer,"
+],
+[
+47.9,
+48.87,
+"而GitHub呢",
+"while GitHub"
+],
+[
+48.87,
+50.87,
+"是可以把这个文件夹连同",
+"can take this folder,"
+],
+[
+50.87,
+53.6,
+"所有的存档一起都传到云端",
+"together with all its saves, up to the cloud."
+],
+[
+53.6,
+55.27,
+"就类似于是一个网盘",
+"It's kind of like a cloud drive,"
+],
+[
+55.27,
+56.47,
+"而且是可以跟多人",
+"and one you can share"
+],
+[
+56.47,
+58.33,
+"共享一起协作的网盘",
+"and work on with other people."
+],
+[
+58.33,
+59.77,
+"那接下来我们先跟大家详细",
+"Next, let me walk you through"
+],
+[
+59.77,
+61.6,
+"来讲一下到底该如何使用Git",
+"how to actually use Git."
+],
+[
+61.73,
+63.33,
+"那最简单的方式呢",
+"The easiest way"
+],
+[
+63.4,
+66.2,
+"就是可以用agent来帮助我们去安装",
+"is to let your agent install it for you."
+],
+[
+66.37,
+67.67,
+"直接在你的agent工具",
+"Just type this sentence"
+],
+[
+67.67,
+69.33,
+"上输入这一句话",
+"into your agent tool."
+],
+[
+69.67,
+70.53,
+"很多电脑呢",
+"Many computers"
+],
+[
+70.53,
+72.13,
+"它自带是有这个工具的",
+"already come with this tool."
+],
+[
+72.13,
+72.7,
+"如果是没有",
+"If yours doesn't,"
+],
+[
+72.7,
+74.3,
+"你把它安装起来就可以了",
+"just install it."
+],
+[
+74.3,
+76.77,
+"装好之后使用起来非常方便",
+"Once it's installed, it's really handy."
+],
+[
+76.8,
+78.2,
+"跟大家介绍两个我",
+"Let me show you two things"
+],
+[
+78.2,
+79.57,
+"觉得很好用的地方",
+"I find really useful."
+],
+[
+79.7,
+80.3,
+"第一个呢",
+"First,"
+],
+[
+80.3,
+82.43,
+"就是当大家要起一个比较大",
+"when you're starting a big,"
+],
+[
+82.43,
+84.1,
+"比较复杂比较长的任务的时候",
+"complex, long task,"
+],
+[
+84.1,
+86.13,
+"创建好你的项目文件夹之后",
+"after you create your project folder,"
+],
+[
+86.13,
+87.5,
+"直接输入这句话",
+"just type this sentence,"
+],
+[
+87.5,
+90.03,
+"它就可以帮你开启一个Git仓库了",
+"and it'll set up a Git repository for you."
+],
+[
+90.1,
+91.17,
+"那后面呢",
+"From then on,"
+],
+[
+91.17,
+93.6,
+"不管是你去迭代你的产品网站",
+"whether you're iterating on your product website,"
+],
+[
+93.6,
+95.0,
+"还是说你在写小说或者",
+"or writing a novel,"
+],
+[
+95.0,
+96.2,
+"写很长的文档的时候",
+"or a long document,"
+],
+[
+96.2,
+97.47,
+"需要存各个版本",
+"and need to keep different versions,"
+],
+[
+97.57,
+99.97,
+"你直接跟他讲帮你存档",
+"just tell it \"save for me\","
+],
+[
+99.97,
+101.2,
+"他就可以帮你把这个",
+"and it'll save"
+],
+[
+101.2,
+103.73,
+"V1V2V3V4全部都存下来",
+"V1, V2, V3, V4, all of them."
+],
+[
+103.8,
+105.4,
+"如果是你哪个版本改的",
+"If you changed a version"
+],
+[
+105.4,
+106.7,
+"觉得不好不满意的话",
+"and you're not happy with it,"
+],
+[
+106.73,
+108.5,
+"你直接用大白话就能",
+"just say it in plain words"
+],
+[
+108.5,
+110.33,
+"回到之前的任意一个版本",
+"and go back to any earlier version."
+],
+[
+110.33,
+111.2,
+"那在这个界面里",
+"In this screen,"
+],
+[
+111.2,
+112.6,
+"大家其实可以看到",
+"you can actually see"
+],
+[
+112.63,
+114.13,
+"每一次的存档的记录",
+"the record of every save,"
+],
+[
+114.13,
+115.13,
+"每个版本改了什么",
+"and what changed in each version."
+],
+[
+115.13,
+116.6,
+"都非常的直观",
+"It's all very clear."
+],
+[
+116.67,
+118.97,
+"那除了它最基础的存档功能之外",
+"Besides the basic save feature,"
+],
+[
+118.97,
+120.03,
+"另外还有个非常好用",
+"there's another really useful one:"
+],
+[
+120.03,
+121.47,
+"的就是分支的功能",
+"branches."
+],
+[
+121.47,
+122.77,
+"这个功能我自己也特别喜欢",
+"I personally love this feature."
+],
+[
+122.77,
+126.4,
+"经常会走到某个节点的时候",
+"We often reach a point"
+],
+[
+126.4,
+128.33,
+"需要去做一些尝试",
+"where we want to try things out."
+],
+[
+128.57,
+129.97,
+"比如说我们给网站做",
+"For example, when we're working on"
+],
+[
+129.97,
+131.13,
+"设计和配色的时候",
+"a website's design and colors,"
+],
+[
+131.13,
+133.33,
+"有时候你可能想了好几个设计方案",
+"you might come up with several options,"
+],
+[
+133.33,
+133.8,
+"ABC",
+"A, B, C."
+],
+[
+133.8,
+134.27,
+"那这个时候",
+"At that point,"
+],
+[
+134.27,
+136.73,
+"我们就可以直接开分支去尝试",
+"we can just open branches to try them."
+],
+[
+136.77,
+139.03,
+"你可以理解为我们直接在存档的",
+"Think of it as taking our main save line"
+],
+[
+139.03,
+142.3,
+"主干支线上额外多开出来三条支线",
+"and opening three extra side branches"
+],
+[
+142.37,
+144.57,
+"去尝试并且不影响主干支线",
+"to experiment, without touching the main line."
+],
+[
+144.9,
+145.9,
+"而且你三条支线",
+"And after the three branches,"
+],
+[
+145.97,
+147.63,
+"你尝试了三个配色之后",
+"once you've tried three color schemes,"
+],
+[
+147.63,
+148.77,
+"你觉得哪个支线好",
+"whichever branch you like best,"
+],
+[
+148.77,
+150.7,
+"你就可以直接让这个支线",
+"you can just have that branch"
+],
+[
+150.7,
+152.77,
+"合并到你的主干线上去",
+"merged into your main line."
+],
+[
+152.8,
+153.67,
+"非常的方便",
+"Super convenient."
+],
+[
+153.7,
+155.4,
+"甚至是大家在写长篇小说的时候",
+"Even when you're writing a long novel,"
+],
+[
+155.4,
+156.53,
+"如果到某个情节点",
+"if you reach a plot point"
+],
+[
+156.53,
+158.13,
+"你需要开多个分支去",
+"where you want to open several branches"
+],
+[
+158.13,
+159.57,
+"尝试一下剧情的走向",
+"to try different storylines,"
+],
+[
+159.6,
+161.97,
+"也是可以用这种方式来尝试的OK",
+"you can do it the same way. OK."
+],
+[
+161.97,
+164.33,
+"但是光有Git还是不够的",
+"But Git alone isn't enough,"
+],
+[
+164.33,
+166.27,
+"因为Git只能把存档存在",
+"because Git can only keep the saves"
+],
+[
+166.27,
+167.53,
+"我们自己的电脑上",
+"on our own computer."
+],
+[
+167.53,
+169.47,
+"如果你的项目涉及到多人协作",
+"If your project involves teamwork,"
+],
+[
+169.57,
+171.87,
+"或者是你想开放给其他",
+"or you want to open it up"
+],
+[
+171.87,
+173.8,
+"很多的陌生用户去用",
+"to lots of other people,"
+],
+[
+173.9,
+176.73,
+"建议大家还是要推送到GitHub上",
+"I'd suggest pushing it to GitHub."
+],
+[
+176.8,
+178.4,
+"那我们上传到GitHub的",
+"Uploading to GitHub"
+],
+[
+178.4,
+179.53,
+"方式也非常简单哈",
+"is really simple too."
+],
+[
+179.53,
+181.27,
+"直接找到我们agent",
+"Just find the GitHub plugin"
+],
+[
+181.27,
+182.93,
+"工具里面的GitHub插件",
+"in your agent tool,"
+],
+[
+182.93,
+184.67,
+"或者是GitHub连接器",
+"or the GitHub connector,"
+],
+[
+184.67,
+186.6,
+"然后跟GitHub连通一下",
+"and connect it to GitHub."
+],
+[
+186.6,
+187.23,
+"接下来呢",
+"Then,"
+],
+[
+187.23,
+190.5,
+"我们就直接在对话框里面@GitHub",
+"in the chat box we just type @GitHub"
+],
+[
+190.6,
+193.17,
+"让它帮我们把整个项目打包",
+"and have it package the whole project"
+],
+[
+193.17,
+195.9,
+"推送到我们自己的GitHub仓库里面",
+"and push it to our own GitHub repository."
+],
+[
+195.9,
+197.33,
+"就完成了整个过程",
+"That's the whole process."
+],
+[
+197.33,
+199.03,
+"那等我们把整个项目",
+"Once we've pushed the whole project"
+],
+[
+199.03,
+200.7,
+"推到GitHub上面之后",
+"up to GitHub,"
+],
+[
+200.7,
+203.23,
+"其实能做的事情真的就更多了",
+"there's a lot more we can do."
+],
+[
+203.27,
+204.8,
+"首先呢我们所有的项目都是",
+"First, every one of our projects"
+],
+[
+204.8,
+206.17,
+"有一个云端备份的",
+"gets a backup in the cloud."
+],
+[
+206.17,
+208.3,
+"如果是你自己换了电脑想要操作",
+"If you switch computers and want to keep working,"
+],
+[
+208.3,
+210.7,
+"或者是你想把这个项目给",
+"or you want to give this project"
+],
+[
+210.7,
+212.97,
+"到其他的朋友去用的话",
+"to your friends to use,"
+],
+[
+213.0,
+215.17,
+"直接让他们打开这个GitHub的链接",
+"just have them open the GitHub link"
+],
+[
+215.17,
+216.2,
+"我再让他们的agent帮",
+"and have their agent"
+],
+[
+216.2,
+217.37,
+"他们下载就可以了",
+"download it for them."
+],
+[
+217.4,
+218.7,
+"那除此之外呢",
+"On top of that,"
+],
+[
+218.77,
+221.57,
+"它也非常方便我们去做后续的部署",
+"it makes deploying later really easy,"
+],
+[
+221.67,
+223.63,
+"以及开放给更多的人去使用",
+"and opening it up to more people."
+],
+[
+223.63,
+225.37,
+"比如说我们这里做了一个小的网站",
+"For example, we made a small website here"
+],
+[
+225.37,
+226.2,
+"我们是想开放给",
+"that we wanted to open up"
+],
+[
+226.2,
+227.63,
+"海外的用户去使用的",
+"to users overseas."
+],
+[
+227.63,
+230.0,
+"我直接是推送到我的GitHub上",
+"I pushed it straight to my GitHub,"
+],
+[
+230.07,
+232.23,
+"并且我再连接上了我的",
+"and then connected it to"
+],
+[
+232.57,
+234.27,
+"Cloudflare里面的各种各样的功能",
+"all the features in Cloudflare,"
+],
+[
+234.27,
+236.5,
+"就能直接把它部署到线上了",
+"and it was deployed online right away."
+],
+[
+236.57,
+237.43,
+"除了这些之外",
+"Beyond all this,"
+],
+[
+237.43,
+239.13,
+"GitHub项目还有个很重要的功能",
+"GitHub projects have another key feature:"
+],
+[
+239.13,
+241.53,
+"可以方便大家多人去协作",
+"they make teamwork easy."
+],
+[
+241.63,
+242.7,
+"当我们把这个项目",
+"Once we've pushed this project"
+],
+[
+242.7,
+244.53,
+"推送到GitHub上之后",
+"to GitHub,"
+],
+[
+244.53,
+245.97,
+"其他的人都可以去",
+"anyone else can"
+],
+[
+245.97,
+247.8,
+"下载这个项目进行修改",
+"download it and make changes."
+],
+[
+247.8,
+250.33,
+"但是大家多人进行修改的时候",
+"But when lots of people edit it,"
+],
+[
+250.33,
+251.3,
+"最麻烦的一个问题",
+"the most annoying problem"
+],
+[
+251.3,
+252.93,
+"就是会不会相互覆盖",
+"is whether they'll overwrite each other"
+],
+[
+252.93,
+253.8,
+"相互影响",
+"and mess each other up."
+],
+[
+253.8,
+254.4,
+"那这个问题",
+"For this problem,"
+],
+[
+254.4,
+256.77,
+"GitHub是帮我们很好的进行了避免",
+"GitHub prevents it really well,"
+],
+[
+256.77,
+257.63,
+"因为别的账户修改我们的项目",
+"because when another account edits our project"
+],
+[
+258.37,
+259.5,
+"并且提交的时候",
+"and submits it,"
+],
+[
+259.57,
+262.1,
+"其实并不会直接的去覆盖这个代码",
+"it doesn't directly overwrite the code."
+],
+[
+262.1,
+264.33,
+"而是会先提交一个修改申请",
+"Instead, it first submits a change request"
+],
+[
+264.33,
+265.4,
+"叫Pull request",
+"called a pull request."
+],
+[
+265.4,
+266.8,
+"那我们项目的负责人",
+"Our project owner"
+],
+[
+266.8,
+268.2,
+"看过之后觉得没问题",
+"takes a look, and if it's fine,"
+],
+[
+268.2,
+270.63,
+"点一下同意才会真正的生效",
+"clicks approve, and only then does it take effect."
+],
+[
+270.63,
+270.93,
+"所以",
+"So"
+],
+[
+270.93,
+272.87,
+"如果你想把你的项目开源",
+"if you want to open-source your project"
+],
+[
+272.87,
+275.17,
+"去集合更多网友的智慧",
+"and gather wisdom from more people,"
+],
+[
+275.17,
+277.87,
+"那推到GitHub上真的是你必须的选项",
+"pushing it to GitHub is a must."
+],
+[
+277.87,
+278.8,
+"所以Git和GitHub是不是",
+"So, Git and GitHub"
+],
+[
+278.8,
+280.87,
+"其实并没有那么的复杂和困难",
+"aren't really that complicated or hard, right?"
+],
+[
+280.93,
+282.33,
+"OK那今天就分享到这了",
+"OK, that's it for today."
+],
+[
+282.33,
+283.67,
+"后面还会分享更多",
+"I'll share more"
+],
+[
+283.67,
+285.17,
+"agent相关的实用教程",
+"practical agent tutorials later."
+],
+[
+285.17,
+286.47,
+"记得关注下期见",
+"Remember to follow, see you next time!"
+]
+]
