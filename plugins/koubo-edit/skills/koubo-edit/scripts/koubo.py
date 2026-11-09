@@ -318,7 +318,13 @@ def overlays(wd, cfg, en_on):
                     img.alpha_composite(E, ((S.W - E.width) // 2, int(S.H * sy + L.height / 2 - 34)))
             if items:
                 B = S.list_block([tuple(x) for x in items], [tuple(x) for x in full])
-                img.alpha_composite(B, ((S.W - B.width) // 2, int(S.H * 0.80 - B.height)))
+                # 清单放胸前、靠左，不压五官（du 定的规矩，11158）。list_x 可调左边距；face_box 写了就做重叠检查
+                bx, by = int(cfg.get("list_x", 64)), int(S.H * cfg.get("list_bottom", 0.80) - B.height)
+                fb = cfg.get("face_box")  # [x0, y0, x1, y1]，粗剪画面坐标，从眉毛到下巴、两耳之间
+                if fb and not (bx + B.width <= fb[0] or bx >= fb[2] or by + B.height <= fb[1] or by >= fb[3]):
+                    raise SystemExit(f"清单压到五官了（{m:.1f}s）：清单框 {[bx, by, bx + B.width, by + B.height]}，"
+                                     f"脸 {fb}。调小 list_x、list_bottom 往下挪，或把条目写短")
+                img.alpha_composite(B, (bx, by))
             p = os.path.join(OUT, f"{len(cache):04d}.png"); img.save(p); cache[key] = p
         seq.append((cache[key], a, b))
     lst = os.path.join(wd, "ov_en.txt" if EN else "ov.txt")

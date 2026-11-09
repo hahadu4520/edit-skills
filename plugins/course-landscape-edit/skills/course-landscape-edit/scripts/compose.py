@@ -9,7 +9,9 @@ CLIPF=E+'/clips.json';subs=json.load(open(E+'/subs.json'));en=open(E+'/en.txt').
 PX,PY,PW,PH=48,112,1360,765
 BW,BH=432,520;BX=W-48-BW;BY=PY+PH-BH
 SW=int(1080*BW/BH);SX=600-SW//2
-CH=json.load(open(E+'/chap.json'))
+CH=json.load(open(E+'/chap.json'));NCH=len(CH)-1  # 章节数不固定，按 chap.json 自动算
+CHN=json.load(open(E+'/chap_names.json')) if os.path.exists(E+'/chap_names.json') else None
+import rules;rules.check(segs,json.load(open(CLIPF)) if os.path.exists(CLIPF) else {},CH,CHN)  # 运镜/转场/章节表不合规就直接报错
 def rmask(w,h,r):
     m=np.zeros((h,w),np.uint8)
     cv2.rectangle(m,(r,0),(w-1-r,h-1),255,-1);cv2.rectangle(m,(0,r),(w-1,h-1-r),255,-1)
@@ -25,10 +27,10 @@ def blend4(dst,src,x,y):
 BG=np.empty((H,W,3),np.float32);BG[:]=(244,242,238)
 sh=np.zeros((H,W),np.float32);sh[PY+18:PY+PH+18,PX:PX+PW]=1;sh[BY+18:BY+BH+18,BX:BX+BW]=1
 sh=cv2.GaussianBlur(sh,(0,0),20)*0.13;BG=np.clip(BG*(1-sh[:,:,None])+np.array([30,30,40])*sh[:,:,None],0,255).astype(np.uint8)
-LAB=[np.array(Image.open(f'{E}/kf/lab_{i}.png').convert('RGBA')) for i in range(7)]
+LAB=[np.array(Image.open(f'{E}/kf/lab_{i}.png').convert('RGBA')) for i in range(NCH)]
 # progress bar geometry (matches gen.py)
-X0,X1,GAP=64,1856,8;tot=CH[-1];avail=X1-X0-GAP*6;BARS=[];x=X0
-for i in range(7):
+X0,X1,GAP=64,1856,8;tot=CH[-1];avail=X1-X0-GAP*(NCH-1);BARS=[];x=X0
+for i in range(NCH):
     w=avail*(CH[i+1]-CH[i])/tot;BARS.append((x,w));x+=w+GAP
 def bar(img,t):
     for i,(x,w) in enumerate(BARS):
@@ -38,9 +40,9 @@ def bar(img,t):
             xe=x+max(8,w*f)
             cv2.rectangle(img,(int(x+4),40),(int(xe-4),47),(47,107,255),-1);cv2.circle(img,(int(x+4),44),4,(47,107,255),-1,cv2.LINE_AA);cv2.circle(img,(int(xe-4),44),4,(47,107,255),-1,cv2.LINE_AA)
 def chap(t):
-    for i in range(7):
+    for i in range(NCH):
         if t<CH[i+1]: return i
-    return 6
+    return NCH-1
 # panel sources
 cache={}
 CMPBG={k:np.array(Image.open(f'{E}/cmpbg/{k}.png').convert('RGB')) for k in ('both','rmiss','lmiss')}
@@ -150,7 +152,7 @@ while True:
         o=BG.copy();paste(o,panel(kk,tt),PX,PY,PM)
         im=cv2.resize(src[:,SX:SX+SW],(BW,BH),interpolation=cv2.INTER_AREA);paste(o,im,BX,BY,BM);return o
     out=comp(k,t)
-    if k>0 and lt<XF:
+    if k>0 and lt<XF and segs[k].get('trans','dissolve')!='cut':
         pk=k-1;fullx=segs[k]['layer'].startswith('cmp') or segs[pk]['layer'].startswith('cmp')
         e=ease(lt/XF)
         if fullx: q=comp(pk,segs[pk]['t1']-0.001);out=(q.astype(np.float32)*(1-e)+out.astype(np.float32)*e).astype(np.uint8)
