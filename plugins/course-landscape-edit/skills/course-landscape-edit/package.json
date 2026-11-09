@@ -1,0 +1,9 @@
+{
+  "name": "course-landscape-edit-deps",
+  "private": true,
+  "description": "横版课程剪辑技能的渲染依赖：Playwright（课件、动效、字幕卡渲染）和 MiSans（进度条标签字体）",
+  "dependencies": {
+    "misans": "^5.0.0",
+    "playwright": "^1.48.0"
+  }
+}

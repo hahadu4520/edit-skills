@@ -1,0 +1,273 @@
+This is a viral video from overseas
+swapped for my face and my product
+and generated in one click
+And this one
+also performed really well
+a pet-supplies product video
+No need to own a cat or a dog
+just upload a product photo
+and it's swapped for our own product
+Super convenient
+And this beat-synced product video
+made the same way
+done in a few minutes
+The beat is right on
+and the hook, structure and mood all land
+All of these product videos
+were done in one click with Doubao Work
+I didn't use any complicated AI tools
+didn't build a pile of nodes
+no need to understand the tech
+and no need to keep jumping between
+different tools
+Just one Doubao Work
+and the whole process
+gets done right there
+Super convenient
+And that
+is the big reason we recommend e-commerce sellers
+make good use of Doubao Work
+Doubao Work
+runs on Seedream, a powerful image model
+and Seedance, a video model
+and it connects to Feishu
+so we can create and manage assets
+all in one place
+and manage our projects and tasks too
+So it's a great fit for content
+e-commerce sellers
+Today's video
+is episode one of our
+Doubao Work × E-commerce series
+I'll walk you step by step
+through getting started with Doubao Work
+to handle the tedious tasks
+in your e-commerce workflow more efficiently
+In today's episode
+there are two big parts
+Part one
+I'll show you
+the basics of Doubao Work
+Part two
+is four steps
+showing in detail how to use Doubao Work
+to make a viral video for
+your own product
+Specifically, we'll
+break down a viral video
+then use that breakdown
+as the frame for a new script
+then turn the script
+into a new video
+and do some editing and tuning
+And finally
+we'll connect Feishu together
+to manage and save all our assets
+OK, without further ado
+let's get started
+First, part one
+Open the official website with me
+On the website
+just click once
+and it downloads
+Once it's downloaded
+let's look at the interface
+It has three areas
+Top left
+is the feature area
+with lots of handy features
+In the later course examples
+I'll go through them in detail
+no need to rush for now
+Bottom left
+is your history
+Every chat and every project
+is saved here
+Here
+pay extra attention to Projects
+For long-running work
+with a fixed process
+use a Project to manage it
+it's really convenient
+Third
+is the one you know well
+the chat input box
+Compared with the old chat-only mode
+the Doubao Work input box
+has lots of useful additions
+like Skills
+and Connectors
+We'll cover these
+later with examples
+one by one
+For now
+just remember one thing
+whenever you do any task later
+make sure Work Mode is selected
+That way every task we hand over
+runs more efficiently
+OK, once it's downloaded
+we move on to today's hands-on part
+I'll take you through making
+our own product video
+Step one
+don't rush straight into
+generating with Seedance
+For this step, I suggest
+first breaking down videos that already went viral
+videos with great numbers
+to see what they have in common
+Go to Projects
+and click here to create a new project
+Because in content e-commerce
+we generate lots and lots of videos in batches
+it's never just one and done
+This is a classic case of
+a fixed process
+repeated over and over
+so let's create a project
+and keep all the related chats
+organized under it
+Once the project is set up
+create a new chat inside it
+click the "+" on the left of the input box
+upload the viral videos we saved
+then type this simple prompt
+After typing the prompt
+here's the key part
+At this point
+make sure you open Skills
+and find the skill for breaking down video elements
+Once it's selected
+you'll see the skill turn blue
+Then just press Enter
+wait a moment
+and we can see
+the breakdown it produced
+I think it's quite professional
+One more thing
+at this stage you can
+adjust the focus for your category
+For example
+if you want videos that are
+more beat-driven and rhythmic
+then when you ask for the breakdown
+mention in the prompt
+to pay attention to the beat
+And if
+yours are talking-head videos
+tell it
+to focus on the copy in the breakdown
+Step two, we can use the breakdown
+as the frame to plan a new video
+When planning, note this
+if you want to swap in our own product
+or make ourselves the main character
+or use our model
+in that case
+upload the elements that change
+these images
+After uploading
+we type this very plain prompt
+and it can help us
+start planning the new video
+At the planning and script stage
+review and refine more
+For this video, for example
+you can see
+the first plan it gave me
+didn't nail the beat, I felt
+So I just said in plain words
+what didn't meet the brief
+After about one or two rounds
+the script was pretty good
+and I was happy with it
+Next
+we move on to step three
+generating the video from the planned script
+Type a slash, then Seedance
+in the box that pops up
+select the Seedance model
+and it starts preparing to generate
+Video generation takes a bit longer
+so we'll wait a moment
+after a little while
+we can see the video
+I'm pretty happy with it
+If there's anything you want to adjust
+say the product looks off
+or the camera angle isn't great
+just tell it in plain words
+how to change it
+and it edits just that spot
+OK, once all the edits are done
+and we have a video we like
+we move on to step four
+In content e-commerce we're making
+N videos and images every day
+so managing assets well
+is actually really important
+Here
+we can use
+a great tool: Feishu
+Click the top left
+Connectors
+search for Feishu in the search box
+and you'll see this little card
+add it first
+Once it's added
+in the bottom right of the input box
+click Connectors
+and turn on
+the Feishu switch
+With Feishu switched on
+we can easily
+take what each chat produces
+including which template
+how many videos were made
+and on what day
+and write it all in batches
+into a Feishu Bitable
+That way
+we can very
+conveniently, inside Doubao Work
+go all the way from breaking down
+viral videos and generating new ones to managing
+all our video assets, in one place
+Once all our assets
+are managed in a Feishu Bitable
+we can do even more later
+For example, we can connect the Feishu
+Bitable with the platforms we publish on
+and have it automatically
+write back each day's video data
+With that automation in place
+you can very efficiently
+see which assets perform well
+and promptly
+scale them up
+or if some assets
+or templates don't perform well
+we can quickly drop them
+Test fast
+iterate fast
+and in the same amount of time
+we can try more products and assets
+and sell our stuff faster
+OK, that's all
+for today
+Let's recap
+With Doubao Work, the whole workflow
+really becomes simple, right?
+From breaking down viral videos
+to writing new video scripts
+to generating new videos
+to managing assets
+all of it, in one place
+handled inside Doubao Work
+In the next episode we'll keep sharing
+how Doubao Work boosts e-commerce efficiency
+Next episode's topic is
+helping you quickly
+make Amazon listing image sets
+Follow, and see you next time
