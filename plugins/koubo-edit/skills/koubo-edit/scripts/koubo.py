@@ -5,6 +5,7 @@
   python koubo.py find <workdir> 词1 词2 ...     # time of phrases on the rough-cut timeline
   python koubo.py beep <workdir>                # mute + 1kHz beep over config.beeps -> <id>_粗剪_哔.mp4
   python koubo.py preview <workdir> t1 t2 ...   # composite subtitle/花字/list frames at times -> <id>_预览/
+  python koubo.py camcheck <workdir>            # check config.camera (人像运镜) against the rules
   python koubo.py burn <workdir> [--en]         # burn everything -> <id>_成片.mp4 (or _成片_双语.mp4)
   python koubo.py cover <workdir>               # 3:4 covers from config.covers -> <id>_封面/
 
@@ -318,7 +319,13 @@ def overlays(wd, cfg, en_on):
                     img.alpha_composite(E, ((S.W - E.width) // 2, int(S.H * sy + L.height / 2 - 34)))
             if items:
                 B = S.list_block([tuple(x) for x in items], [tuple(x) for x in full])
-                img.alpha_composite(B, ((S.W - B.width) // 2, int(S.H * 0.80 - B.height)))
+                # 清单放胸前、靠左，不压五官（du 定的规矩，11158）。list_x 可调左边距；face_box 写了就做重叠检查
+                bx, by = int(cfg.get("list_x", 64)), int(S.H * cfg.get("list_bottom", 0.80) - B.height)
+                fb = cfg.get("face_box")  # [x0, y0, x1, y1]，粗剪画面坐标，从眉毛到下巴、两耳之间
+                if fb and not (bx + B.width <= fb[0] or bx >= fb[2] or by + B.height <= fb[1] or by >= fb[3]):
+                    raise SystemExit(f"清单压到五官了（{m:.1f}s）：清单框 {[bx, by, bx + B.width, by + B.height]}，"
+                                     f"脸 {fb}。调小 list_x、list_bottom 往下挪，或把条目写短")
+                img.alpha_composite(B, (bx, by))
             p = os.path.join(OUT, f"{len(cache):04d}.png"); img.save(p); cache[key] = p
         seq.append((cache[key], a, b))
     lst = os.path.join(wd, "ov_en.txt" if EN else "ov.txt")
@@ -330,8 +337,81 @@ def overlays(wd, cfg, en_on):
     return seq, lst
 
 
+# ---------- 4b. 运镜（人像） ----------
+# config.camera: [[时间, 手法, 倍数], ...]，粗剪时间轴。手法：
+#   jump  跳切推近/拉回：在句子切换处瞬间换到这个倍数（口播最常用）
+#   punch 快推：PUNCH 秒内 ease-out 推到这个倍数，然后定住（配开场、核心数字、金句）
+#   reset 回到 1.0（瞬间）
+# 以脸为中心放大（face_box 必填）。禁止慢推慢移：没有「缓慢变化」这种手法。
+CAM_KINDS = {"jump": "跳切推近/拉回", "punch": "快推定格", "reset": "复位"}
+CAM_BANNED = {"slow": "慢推", "kenburns": "缓慢推拉平移", "pan": "慢移", "shake": "震屏（待试）", "whip": "甩镜（待试）"}
+PUNCH, CAM_MAX, CAM_GAP = 0.3, 1.2, 4.0
+
+
+def cam_events(cfg):
+    ev = sorted(cfg.get("camera", []), key=lambda e: e[0])
+    out, z = [], 1.0
+    for e in ev:
+        t, kind = float(e[0]), e[1]
+        z1 = 1.0 if kind == "reset" else float(e[2])
+        out.append((t, kind, z, z1)); z = z1
+    return out
+
+
+def check_camera(cfg):
+    ev = cam_events(cfg)
+    if not ev: return
+    errs = []
+    fb = cfg.get("face_box")
+    if not fb: errs.append("用了 camera 就必须写 face_box，运镜以脸为中心放大")
+    lists = [(l["reveal"][0], l["end"]) for l in cfg.get("lists", [])]
+    for i, (t, kind, z0, z1) in enumerate(ev):
+        if kind in CAM_BANNED: errs.append(f"camera {t}s：「{kind}」（{CAM_BANNED[kind]}）不允许"); continue
+        if kind not in CAM_KINDS: errs.append(f"camera {t}s：未知手法「{kind}」，可用 {', '.join(CAM_KINDS)}"); continue
+        if not 1.0 <= z1 <= CAM_MAX: errs.append(f"camera {t}s：倍数 {z1} 超出 1.0–{CAM_MAX}，再大画质会糊")
+        if i and t - ev[i - 1][0] < CAM_GAP: errs.append(f"camera {t}s：离上一次运镜只有 {t - ev[i - 1][0]:.1f}s，至少隔 {CAM_GAP}s，太密会晃")
+        if fb and z1 > 1.0:
+            cx, cy = (fb[0] + fb[2]) / 2, (fb[1] + fb[3]) / 2
+            top, bot = cy - (cy - fb[1]) * z1, cy + (fb[3] - cy) * z1
+            if top < 0 or bot > S.H * 0.76 - 60:
+                errs.append(f"camera {t}s：放大到 {z1} 后脸会出画或碰到字幕（脸 {top:.0f}–{bot:.0f}px），把倍数调小")
+    for a, b in lists:
+        z = cam_zoom(ev, a); zz = max([z] + [e[3] for e in ev if a <= e[0] < b])
+        if zz > 1.0: errs.append(f"清单 {a}–{b}s 期间画面是放大的（{zz}），清单出现时人像要在 1.0，先 reset")
+    if errs: raise SystemExit("运镜不符合规则：\n- " + "\n- ".join(errs))
+
+
+def cam_zoom(ev, t):
+    z = 1.0
+    for t0, kind, z0, z1 in ev:
+        if t < t0: break
+        z = z0 + (z1 - z0) * (1 - (1 - min(1, (t - t0) / PUNCH)) ** 3) if kind == "punch" else z1
+    return z
+
+
+def cam_filter(cfg, W0, H0):
+    """ffmpeg 滤镜：按 camera 逐帧放大再以脸为中心裁回原尺寸。没有运镜返回 None。"""
+    ev = cam_events(cfg)
+    if not ev: return None
+    expr = "1"  # Z(t)：由内向外套 if，最后一个 t0<=t 的事件生效
+    for t0, kind, z0, z1 in ev:
+        seg = (f"if(lt(t,{t0 + PUNCH}),{z0}+({z1}-{z0})*(1-pow(1-(t-{t0})/{PUNCH},3)),{z1})"
+               if kind == "punch" else f"{z1}")
+        expr = f"if(lt(t,{t0}),{expr},{seg})"
+    fb = cfg["face_box"]; fx, fy = (fb[0] + fb[2]) / 2 / S.W, (fb[1] + fb[3]) / 2 / S.H
+    return (f"scale=w='2*trunc(iw*({expr})/2)':h='2*trunc(ih*({expr})/2)':eval=frame,"
+            f"crop=w={W0}:h={H0}:x='(iw-{W0})*{fx:.4f}':y='(ih-{H0})*{fy:.4f}'")
+
+
+def cmd_camcheck(wd):
+    cfg = load(wd); check_camera(cfg)
+    ev = cam_events(cfg)
+    print(f"OK：{len(ev)} 处运镜都符合规则" if ev else "没有写 camera，全程固定机位")
+
+
 def cmd_preview(wd, *ts):
     cfg = load(wd); en = "--en" in ts; ts = [float(t) for t in ts if t != "--en"]
+    check_camera(cfg)
     seq, _ = overlays(wd, cfg, en)
     od = outp(cfg, "_双语预览" if en else "_预览"); os.makedirs(od, exist_ok=True)
     src = outp(cfg, "_粗剪_哔.mp4") if os.path.exists(outp(cfg, "_粗剪_哔.mp4")) else outp(cfg, "_粗剪.mp4")
@@ -340,7 +420,13 @@ def cmd_preview(wd, *ts):
         f = next(p for p, a, b in seq if a <= T < b)
         tmp = os.path.join(wd, "_frame.png")
         sh("ffmpeg", "-v", "error", "-y", "-ss", str(T), "-i", src, "-frames:v", "1", tmp)
-        im = Image.open(tmp).convert("RGBA").resize((S.W, S.H)); im.alpha_composite(Image.open(f))
+        im = Image.open(tmp).convert("RGBA").resize((S.W, S.H))
+        z = cam_zoom(cam_events(cfg), T)
+        if z > 1.0:  # 和 burn 一样以脸为中心放大
+            fb = cfg["face_box"]; cx, cy = (fb[0] + fb[2]) / 2, (fb[1] + fb[3]) / 2
+            w, h = S.W / z, S.H / z; x0, y0 = cx - cx / z, cy - cy / z
+            im = im.crop((round(x0), round(y0), round(x0 + w), round(y0 + h))).resize((S.W, S.H), Image.LANCZOS)
+        im.alpha_composite(Image.open(f))
         mm, ss = divmod(T, 60); p = os.path.join(od, f"{int(mm)}m{ss:04.1f}s.jpg"); im.convert("RGB").save(p, quality=90); outs.append(p)
     w, h, cols = 272, 480, 5
     c = Image.new("RGB", (cols * w, -(-len(outs) // cols) * h))
@@ -351,11 +437,16 @@ def cmd_preview(wd, *ts):
 
 def cmd_burn(wd, *flags):
     cfg = load(wd); en = "--en" in flags
+    check_camera(cfg)
     _, lst = overlays(wd, cfg, en)
     src = outp(cfg, "_粗剪_哔.mp4") if os.path.exists(outp(cfg, "_粗剪_哔.mp4")) else outp(cfg, "_粗剪.mp4")
     out = outp(cfg, "_成片_双语.mp4" if en else "_成片.mp4")
+    W0, H0 = map(int, subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                                      "-of", "csv=p=0", src], capture_output=True, text=True).stdout.strip().split(",")[:2])
+    cam = cam_filter(cfg, W0, H0)
+    base = f"[0:v]{cam}[c];[c]" if cam else "[0:v]"
     sh("ffmpeg", "-y", "-v", "error", "-i", src, "-f", "concat", "-safe", "0", "-i", lst, "-filter_complex",
-       f"[1:v]fps=30,format=rgba,scale={S.W}:{S.H}[o];[0:v][o]overlay=0:0:eof_action=pass:format=auto,format=yuv420p[v]",
+       f"[1:v]fps=30,format=rgba,scale={S.W}:{S.H}[o];{base}[o]overlay=0:0:eof_action=pass:format=auto,format=yuv420p[v]",
        "-map", "[v]", "-map", "0:a", *venc(), "-c:a", "copy", "-movflags", "+faststart", out)
     print(out)
 
