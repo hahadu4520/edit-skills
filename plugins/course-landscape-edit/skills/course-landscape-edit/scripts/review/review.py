@@ -10,7 +10,7 @@
   python review.py launch <工作目录> [--port 8765]
       给 Claude 桌面版写 <工作目录>/.claude/launch.json，让审片台在它的 Browser 侧栏里打开。
 
-现在支持：课程横版（工作目录里有 ed/segs.json）。口播和像素风的读法之后加。
+现在支持：课程横版（工作目录里有 ed/segs.json）、朴素版口播（有 config.json）、像素风（有 render_full.py）。
 只用 Python 标准库和 ffmpeg/ffprobe，Mac 和 Windows 都能跑。
 这个文件和 page.html 的正本在仓库 shared/review/，各风格 scripts/review/ 是复制品。
 """
@@ -145,7 +145,134 @@ def course(wd, dur):
                 thumbs_at=[(s["t0"] + s["t1"]) / 2 for s in segs])
 
 
-STYLES = {"course": (course, lambda wd: os.path.exists(os.path.join(wd, "ed", "segs.json")) or os.path.exists(os.path.join(wd, "segs.json")))}
+# ---------- 朴素版口播（竖版 1088×1920，工作目录里有 config.json） ----------
+HL_OPTS = [{"v": "A 黄色重点"}, {"v": "B 红色警示"}, {"v": "C1 黄对比"}, {"v": "C2 蓝对比"}, {"v": "H 放大"}]
+HL_NAME = {o["v"].split()[0]: o["v"] for o in HL_OPTS}
+KB_MOVE = {"jump": "跳切推近", "punch": "快推定格", "reset": "复位"}
+KB_MOVE_OPTS = [{"v": "跳切推近"}, {"v": "快推定格"}, {"v": "复位"}, {"v": "震屏", "tag": "待试"}, {"v": "甩镜", "tag": "待试"},
+                {"v": "慢推", "off": "不允许"}]
+
+
+def koubo_cfg(wd):
+    return jload(os.path.join(wd, "config.json"))
+
+
+def koubo_video(wd):
+    cfg = koubo_cfg(wd); od = os.path.expanduser(cfg.get("out_dir", wd)); i = cfg.get("id", "")
+    c = glob.glob(os.path.join(od, f"{i}_成片*.mp4")) or glob.glob(os.path.join(od, f"{i}_粗剪.mp4"))
+    return max(c, key=os.path.getmtime) if c else find_video(wd)
+
+
+def koubo(wd, dur):
+    cfg = koubo_cfg(wd); W, H = 1088, 1920
+    cues = []
+    cp = os.path.join(wd, "cues.txt")
+    if os.path.exists(cp):
+        for ln in open(cp, encoding="utf-8").read().splitlines():
+            m = re.match(r"(\d+)\t([\d.]+)-([\d.]+)\t(.*)", ln)
+            if m: cues.append((float(m.group(2)), float(m.group(3)), m.group(4)))
+    en = jload(os.path.join(wd, "en.json")) if os.path.exists(os.path.join(wd, "en.json")) else []
+    subs = []
+    for j, (a, b, t) in enumerate(cues):
+        f = [{"k": "text", "label": "文字", "type": "text", "v": t},
+             {"k": "t0", "label": "出现", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(a, 2)},
+             {"k": "t1", "label": "消失", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(b, 2)}]
+        if j < len(en): f.append({"k": "en", "label": "英文", "type": "text", "v": en[j]})
+        subs.append(dict(t0=a, t1=b, name=t, src=f"cues.txt[{j}]", ph="例：这句断在「其实」后面", f=f))
+    fx = [dict(t0=h[0], t1=h[0] + 1.5, name=h[1], src=f"config.json highlights[{k}]", ph="例：换成「30倍」",
+               f=[{"k": "word", "label": "词", "type": "text", "v": h[1]},
+                  {"k": "style", "label": "样式", "type": "seg", "v": HL_NAME.get(h[2], h[2]), "opts": HL_OPTS}])
+          for k, h in enumerate(cfg.get("highlights", []))]
+    lists = []
+    for k, l in enumerate(cfg.get("lists", [])):
+        f = [{"k": f"item{i+1}", "label": it[0], "type": "text", "v": it[1]} for i, it in enumerate(l["items"])]
+        lists.append(dict(t0=l["reveal"][0], t1=l["end"], name="清单 " + "、".join(it[1] for it in l["items"])[:16],
+                          src=f"config.json lists[{k}]", ph="例：第 3 条晚 1 秒出", f=f))
+    beeps = [dict(t0=b[0], t1=max(b[1], b[0] + 0.4), name=b[2], src=f"config.json beeps[{k}]", ph="例：这个词不用哔",
+                  f=[{"k": "on", "label": "哔声", "type": "seg", "v": "哔掉", "opts": [{"v": "哔掉"}, {"v": "不哔"}]}])
+             for k, b in enumerate(cfg.get("beeps", []))]
+    cam = sorted(cfg.get("camera", []), key=lambda e: e[0]); moves = []
+    for k, e in enumerate(cam):
+        t1 = cam[k + 1][0] if k + 1 < len(cam) else dur
+        z = 1.0 if e[1] == "reset" else float(e[2])
+        moves.append(dict(t0=e[0], t1=t1, name=f"{KB_MOVE.get(e[1], e[1])} {z}×", src=f"config.json camera[{k}]",
+                          ph="例：推得再近一点",
+                          f=[{"k": "kind", "label": "手法", "type": "seg", "v": KB_MOVE.get(e[1], e[1]), "opts": KB_MOVE_OPTS},
+                             {"k": "scale", "label": "倍数", "type": "range", "min": 1.0, "max": 1.2, "step": 0.01, "v": z, "unit": "×"}]))
+    tracks = [dict(key="sub", name="字幕", items=subs), dict(key="fx", name="花字", items=fx),
+              dict(key="list", name="清单", items=lists), dict(key="move", name="运镜", items=moves),
+              dict(key="beep", name="哔声", items=beeps)]
+    ep = [{"k": "bi", "label": "字幕", "type": "seg", "v": "中英" if en else "只中文", "opts": [{"v": "中英"}, {"v": "只中文"}]},
+          {"k": "max_chars", "label": "每行字数", "type": "seg", "v": str(cfg.get("max_chars", 14)),
+           "opts": [{"v": "12"}, {"v": "14"}, {"v": "16"}]},
+          {"k": "hlcolor", "label": "花字配色", "type": "seg", "lv": "系列", "v": "黄红蓝",
+           "opts": [{"v": "黄红蓝"}, {"v": "单色", "tag": "待试"}]},
+          {"k": "cover", "label": "封面版式", "type": "seg", "v": "stack",
+           "opts": [{"v": "stack"}, {"v": "brush"}, {"v": "stagger"}]}]
+    sy = 0.76
+    return dict(style="koubo", styleName="朴素版口播", W=W, H=H, bg="#000000", tracks=tracks, ep=ep,
+                epHint="例：封面换一句「除了A股都有」", subRect=[(W - 1000) / 2 / W, sy - 0.035, 1000 / W, 0.07], thumbs_at=[])
+
+
+# ---------- 像素风（竖版 1080×1440，工程里有 render_full.py） ----------
+PX_KIND = {"A": "A 真人", "B": "B 像素", "C": "C 界面", "S": "S 总结"}
+
+
+def pixel_src(wd):
+    for p in (os.path.join(wd, "render_full.py"), os.path.join(wd, "scripts", "render_full.py")):
+        if os.path.exists(p): return p
+
+
+def pixel(wd, dur):
+    import ast
+    src = pixel_src(wd); tree = ast.parse(open(src, encoding="utf-8").read()); V = {}
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name) and n.targets[0].id in ("SEG", "PUSH", "CUES"):
+            try: V[n.targets[0].id] = ast.literal_eval(n.value)
+            except Exception: pass
+    W, H = 1080, 1440
+    work = os.environ.get("PIXEL_WORK", os.path.join(os.path.dirname(src), "work"))
+    cues = list(V.get("CUES", []))
+    if os.path.exists(os.path.join(work, "full", "cues.json")): cues += [tuple(c) for c in jload(os.path.join(work, "full", "cues.json"))]
+    seg = [(k, a, min(b, dur)) for k, a, b in V.get("SEG", []) if a < dur]
+    kind_opts = [{"v": v} for v in PX_KIND.values()]
+    shots, trans = [], []
+    for i, (k, a, b) in enumerate(seg):
+        kk = k.split(":")[0][0]; nm = k.split(":", 1)[1] if ":" in k else k
+        shots.append(dict(id=f"shot-{i+1}", t0=a, t1=b, name=f"{PX_KIND.get(kk, kk)} {nm}", thumb=i, src=f"render_full.py SEG[{i}]",
+                          ph="例：这段换成像素场景讲存档", f=[{"k": "kind", "label": "镜头", "type": "seg", "v": PX_KIND.get(kk, kk), "opts": kind_opts}]))
+        if i:
+            pk = seg[i - 1][0][0]
+            tv = "像素溶解" if "B" in (pk, kk) else "弹出" if kk == "C" and pk != "C" else "硬切"
+            trans.append(dict(t0=a, t1=a + 0.3, name=f"S{i} → S{i+1}", src=f"render_full.py SEG[{i}]", ph="例：改成硬切",
+                              f=[{"k": "kind", "label": "转场", "type": "seg", "v": tv,
+                                  "opts": [{"v": "像素溶解"}, {"v": "弹出"}, {"v": "硬切"}, {"v": "叠化", "off": "不用"}]}]))
+    moves = [dict(t0=a, t1=b, name="缓推 1.08×", src=f"render_full.py PUSH[{k!r}]", ph="例：这段不要推",
+                  f=[{"k": "kind", "label": "手法", "type": "seg", "v": "缓推", "opts": [{"v": "缓推"}, {"v": "固定"}, {"v": "快推定格", "tag": "待试"}]},
+                     {"k": "scale", "label": "倍数", "type": "range", "min": 1.0, "max": 1.1, "step": 0.01, "v": 1.08, "unit": "×"}])
+             for k, (a, b) in V.get("PUSH", {}).items()]
+    subs = [dict(t0=c[0], t1=c[1], name=c[2], src=("render_full.py CUES" if j < len(V.get("CUES", [])) else "work/full/cues.json") + f"[{j}]",
+                 ph="例：GitHub 写错了",
+                 f=[{"k": "text", "label": "文字", "type": "text", "v": c[2]},
+                    {"k": "t0", "label": "出现", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(c[0], 2)},
+                    {"k": "t1", "label": "消失", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(c[1], 2)}])
+            for j, c in enumerate(cues)]
+    tracks = [dict(key="shot", name="镜头", items=shots), dict(key="trans", name="转场", items=trans),
+              dict(key="move", name="运镜", items=moves), dict(key="sub", name="字幕", items=subs)]
+    ep = [{"k": "scene", "label": "布景", "type": "seg", "v": "草地",
+           "opts": [{"v": "草地"}, {"v": "港口", "tag": "待试"}, {"v": "教室", "tag": "待试"}, {"v": "太空站", "tag": "待试"}, {"v": "图书馆", "tag": "待试"}]},
+          {"k": "season", "label": "季节", "type": "seg", "v": "春夏", "opts": [{"v": "春夏"}, {"v": "秋"}, {"v": "冬", "tag": "待试"}]},
+          {"k": "weather", "label": "天气", "type": "seg", "v": "晴", "opts": [{"v": "晴"}, {"v": "雨", "tag": "待试"}, {"v": "雪", "tag": "待试"}]},
+          {"k": "hero", "label": "主角", "type": "text", "lv": "系列", "v": "棕色像素小熊"}]
+    return dict(style="pixel", styleName="像素风", W=W, H=H, bg="#7fb069", tracks=tracks, ep=ep,
+                epHint="例：布景换成像素教室，先出 3 张关键帧", subRect=[0.08, (1272 - 45) / H, 0.84, 90 / H],
+                thumbs_at=[(a + b) / 2 for _, a, b in seg])
+
+
+# 风格：(读工程, 认目录, 找成片)
+STYLES = {"course": (course, lambda wd: os.path.exists(os.path.join(wd, "ed", "segs.json")) or os.path.exists(os.path.join(wd, "segs.json")), None),
+          "koubo": (koubo, lambda wd: os.path.exists(os.path.join(wd, "config.json")) and "src" in koubo_cfg(wd), koubo_video),
+          "pixel": (pixel, lambda wd: bool(pixel_src(wd)), None)}
 
 
 # ---------- 版本和修改单 ----------
@@ -203,7 +330,7 @@ def build(wd, video, style):
     n = cur_ver(wd)
     D.update(duration=dur, video="video", videoName=os.path.basename(video), ver=f"v{n}", next=f"v{n+1}",
              title=os.path.basename(os.path.abspath(wd)), history=history(wd))
-    D["layout"]["def"] = D["layout"].pop("def_")
+    if "layout" in D: D["layout"]["def"] = D["layout"].pop("def_")
     D["thumbs"] = thumbs(wd, video, D.pop("thumbs_at"))
     draft = os.path.join(rdir(wd), "draft.json")
     if os.path.exists(draft):
@@ -216,7 +343,7 @@ def build(wd, video, style):
 
 def serve(wd, video, style, port, open_it):
     wd = os.path.abspath(wd)
-    video = os.path.abspath(video or find_video(wd))
+    video = os.path.abspath(video or (STYLES[style][2] or find_video)(wd))
     D = build(wd, video, style)
     page = open(os.path.join(HERE, "page.html"), encoding="utf-8").read()
     html = page.replace("const D=/*DATA*/null;", "const D=" + json.dumps(D, ensure_ascii=False) + ";").encode("utf-8")
@@ -299,7 +426,7 @@ def changes(wd):
     print(f"# 修改单 {j['from']} → {j['to']}（{p}）")
     for c in j["changes"]:
         e = c.get("element")
-        head = f"{c['n']}. {c['t']:.1f}s · " + (f"{e['track']}「{e['name']}」 {e.get('source') or ''}" if e else "未选元素")
+        head = f"{c['n']}. {c['t']:.1f}s · " + (f"{e.get('track', '')}「{e['name']}」 {e.get('source') or ''}" if e else "未选元素")
         print(head)
         for k, v in c["set"].items(): print(f"   {k}: {v['from']} → {v['to']}")
         if c.get("ask_ai"): print(f"   一句话：{c['ask_ai']}")
@@ -327,7 +454,7 @@ def launch(wd, port):
 
 
 def detect(wd):
-    for k, (_, ok) in STYLES.items():
+    for k, (_, ok, _v) in STYLES.items():
         if ok(wd): return k
     raise SystemExit("认不出这个工作目录是哪个风格：用 --style 指定")
 

@@ -3,7 +3,7 @@
 # 改了 shared/review/ 之后运行：bash shared/sync.sh
 set -e
 cd "$(dirname "$0")/.."
-for s in course-landscape-edit; do
+for s in course-landscape-edit koubo-edit pixel-edit; do
   d="plugins/$s/skills/$s/scripts/review"
   mkdir -p "$d"
   cp shared/review/review.py shared/review/page.html "$d/"

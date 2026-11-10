@@ -3,7 +3,7 @@
 <style>
 /* 审片台：画面 + 整宽多轨时间轴；元素卡片就地弹出；修改单从顶部打开。数据由 review.py 注入 */
 :root{--bg:#f2f2ef;--fg:#1b1c1f;--mut:#6b6d73;--card:#ffffff;--line:#dfded9;--acc:#2f6bff;--accs:#e7eeff;--red:#e2372f;--reds:#fde8e7;--edit:#d9a400;--edits:#fff4cc;--okbg:#e5f4e4;--okfg:#1f5c2a;--warnbg:#fff4df;--warnfg:#6f4500;--stage:#0d0e10;--track:#f8f8f6;
---k-mark:#e2372f;--k-chap:#8a7cf0;--k-shot:#5f6b7a;--k-trans:#c9892b;--k-move:#2f6bff;--k-anno:#1f9d74;--k-sub:#6d727a;--k-por:#a8998a}
+--k-mark:#e2372f;--k-chap:#8a7cf0;--k-shot:#5f6b7a;--k-trans:#c9892b;--k-move:#2f6bff;--k-anno:#1f9d74;--k-sub:#6d727a;--k-por:#a8998a;--k-fx:#e0a100;--k-list:#1f9d74;--k-beep:#d9534f}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141517;--fg:#eef0f3;--mut:#9fa3ab;--card:#1e2023;--line:#33363b;--acc:#6b93ff;--accs:#1f2a45;--red:#ff5a50;--reds:#3a1b1a;--edit:#f0c419;--edits:#3a3112;--okbg:#1c3320;--okfg:#9be0a6;--warnbg:#382c12;--warnfg:#ffd58a;--stage:#000;--track:#191b1e;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#141517;--fg:#eef0f3;--mut:#9fa3ab;--card:#1e2023;--line:#33363b;--acc:#6b93ff;--accs:#1f2a45;--red:#ff5a50;--reds:#3a1b1a;--edit:#f0c419;--edits:#3a3112;--okbg:#1c3320;--okfg:#9be0a6;--warnbg:#382c12;--warnfg:#ffd58a;--stage:#000;--track:#191b1e;color-scheme:dark}
 *{box-sizing:border-box}[hidden]{display:none!important}
@@ -123,13 +123,13 @@ const $=s=>document.querySelector(s),v=$('#v');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const fmt=t=>{const m=Math.floor(t/60),s=(t%60).toFixed(1).padStart(4,'0');return m+':'+s};
 const TN={chap:'进度条',shot:'镜头',trans:'转场',move:'运镜',anno:'标注与动效',sub:'字幕',por:'人像框',ep:'本集设置'};
-const EL=[];D.tracks.forEach(t=>t.items.forEach((it,i)=>{it.track=t.key;it.id=it.id||t.key+'-'+(i+1);EL.push(it)}));
+D.tracks.forEach(t=>TN[t.key]=t.name);const EL=[];D.tracks.forEach(t=>t.items.forEach((it,i)=>{it.track=t.key;it.id=it.id||t.key+'-'+(i+1);EL.push(it)}));
 const EP={id:'ep',track:'ep',t0:0,t1:0,name:'本集设置',f:D.ep||[]};EL.push(EP);
 const byId=id=>EL.find(e=>e.id===id);
 // 修改单：每条 = 一个位置 + 一个元素（可后补）+ 参数改动 + 一句话
 let R=D.saved||[];
 let pps=28,selEl=null,selRec=null;
-v.src=D.video;v.muted=false;$('#ttl').textContent=D.title;$('#ver').textContent=D.ver;document.querySelectorAll('.nv').forEach(x=>x.textContent=D.next);$('#vv').textContent=D.ver+' → '+D.next;
+v.src=D.video;v.style.aspectRatio=D.W+'/'+D.H;if(D.H>D.W){const mw=`min(860px,${Math.round(55*D.W/D.H)}vh)`;$('#stage').style.maxWidth=mw;$('.ctl').style.maxWidth=mw;$('.ctl').style.marginInline='auto';$('.ctl').style.flexWrap='wrap'}v.muted=false;$('#ttl').textContent=D.title;$('#ver').textContent=D.ver;document.querySelectorAll('.nv').forEach(x=>x.textContent=D.next);$('#vv').textContent=D.ver+' → '+D.next;
 if(D.notes){$('#notes').hidden=false;$('#notes').textContent=D.notes}
 $('#hist').innerHTML=(D.history||[]).map(h=>`<details><summary>${esc(h.from)} → ${esc(h.to)} · ${h.n} 处</summary><div class="hint">${esc(h.summary)}</div></details>`).join('')||'<div class="hint">这是第一版</div>';
 const cvs=$('#layc');cvs.width=D.W;cvs.height=D.H;
@@ -183,11 +183,11 @@ return`<div class="f ${chg?'chg':''}"><label for="f_${f.k}">${esc(f.label)}</lab
 const editable=e.f.filter(f=>f.type!=='ro'&&f.type!=='box'&&!f.g),ro=e.f.filter(f=>f.type==='ro');
 const live=canPrev(e)&&editable.length;
 pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><h3>${esc(label(e))} <span class="hint">${fmt(e.t0)}–${fmt(e.t1)}</span></h3>
-${ro.map(field).join('')}${editable.map(field).join('')}${e.track==='shot'?'<div class="hint">拖画面上的框，改位置和大小</div>':''}${e.track==='chap'?'<div class="hint">进度条样式在「本集设置」里改</div>':''}
+${ro.map(field).join('')}${editable.map(field).join('')}${e.track==='shot'&&D.layout?'<div class="hint">拖画面上的框，改位置和大小</div>':''}${e.track==='chap'?'<div class="hint">进度条样式在「本集设置」里改</div>':''}
 <div class="sec"><span>一句话改</span></div>
 <textarea id="ai" placeholder="${esc(e.ph||'')}">${esc(r0?r0.text:'')}</textarea>
 <div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':editable.length&&!live?'出片后看效果':live?'改了马上能看':''}</span><button id="undo" ${r0?'':'hidden'}>撤销</button></div>`;
-pop.hidden=false;place(pop,$('#b_'+e.id)||anchor);if(e.track==='shot')showLay(e);else $('#lay').hidden=true;
+pop.hidden=false;place(pop,$('#b_'+e.id)||anchor);if(e.track==='shot'&&D.layout)showLay(e);else $('#lay').hidden=true;
 pop.querySelector('.x').onclick=closePop;
 pop.querySelectorAll('.seg').forEach(g=>g.onclick=ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));stage(g.dataset.k,b.dataset.v)});
 pop.querySelectorAll('select,input[type=text]').forEach(i=>i.oninput=()=>stage(i.dataset.k,i.value));
@@ -199,9 +199,9 @@ const r=recFor(e);setCh(e,k,nv,r.t);if(k==='layout'){['cbox','pbox','sbox'].forE
 function done(){const r=recOf(e.id),has=r&&(Object.keys(r.ch).length||r.text);$('#st').textContent=has?'已记入修改单':'';$('#undo').hidden=!has;render()}
 $('#ai').oninput=()=>{const r=recFor(e);r.text=$('#ai').value.trim();$('#cnt').textContent=R.length;$('#st').textContent=r.text||Object.keys(r.ch).length?'已记入修改单':''};$('#ai').onchange=done;
 $('#undo').onclick=()=>{R=R.filter(x=>x.el!==e.id);selRec=null;render();openEl(e,null,false);if(canPrev(e))preview(e);drawLay()}}
-const canPrev=e=>['chap','sub','shot'].includes(e.track);
+const canPrev=e=>['chap','sub'].includes(e.track)||(e.track==='shot'&&!!D.layout);
 // 镜头布局：版式 + 拖框；预览用视频帧重新拼
-const LY=D.layout,SRC=LY.src,PRE=LY.presets;
+const LY=D.layout||{src:{},presets:{},top:0},SRC=LY.src,PRE=LY.presets;
 let tmp={};
 function lay(e){const L=PRE[val(e,'layout')]||PRE[LY.def],r=recOf(e.id),g=k=>r&&r.ch[k]?String(r.ch[k][1]).split(',').map(Number):null;
 const T=selEl===e?tmp:{},c=T.c||g('cbox'),p=T.p||g('pbox'),sb=T.s!=null?[T.s]:g('sbox');
@@ -217,7 +217,7 @@ const h=w*asp,m=W*.025;x=Math.max(m,Math.min(W-m-w,x));y=Math.max(LY.top,Math.mi
 tmp[k]=cur;overlays()};
 b.onpointerup=()=>{b.onpointermove=b.onpointerup=null;tmp={};if(cur==null)return;const r=recFor(e),nv=Array.isArray(cur)?cur.map(x=>Math.round(x)).join(','):String(Math.round(cur));
 setCh(e,{c:'cbox',p:'pbox',s:'sbox'}[k],nv,r.t);render();showLay(e);overlays();const st=$('#st');if(st){st.textContent='已记入修改单';$('#undo').hidden=false}}})}
-function drawLay(){const cv=$('#layc'),t=v.currentTime,sh=EL.find(e=>e.track==='shot'&&t>=e.t0&&t<e.t1),r=sh&&recOf(sh.id),
+function drawLay(){if(!D.layout)return false;const cv=$('#layc'),t=v.currentTime,sh=EL.find(e=>e.track==='shot'&&t>=e.t0&&t<e.t1),r=sh&&recOf(sh.id),
 on=!!sh&&(!!(r&&['layout','cbox','pbox','sbox'].some(k=>r.ch[k]))||(selEl===sh&&Object.keys(tmp).length>0));cv.style.display=on?'block':'none';if(!on)return false;
 const g=cv.getContext('2d'),L=lay(sh),W=D.W,H=D.H;g.fillStyle=D.bg;g.fillRect(0,0,W,H);g.drawImage(v,0,0,W,LY.top,0,0,W,LY.top);
 const blit=(a,d,rad)=>{g.save();g.beginPath();g.roundRect?g.roundRect(d[0],d[1],d[2],d[3],rad):g.rect(d[0],d[1],d[2],d[3]);g.clip();g.drawImage(v,a[0],a[1],a[2],a[3],d[0],d[1],d[2],d[3]);g.restore()};
@@ -294,7 +294,7 @@ function render(){R.sort((a,b)=>a.t-b.t);$('#cnt').textContent=R.length;
 $('#items').innerHTML=R.map(r=>{const e=r.el&&byId(r.el);return`<div class="row2" data-r="${r.id}"><span class="n">${r.id}</span><div><div class="m">${fmt(r.t)} · ${r.ep?'本集设置':e?esc(TN[e.track]+'：'+label(e)):'未选元素'}</div><div class="txt">${desc(r)}${r.text?`${Object.keys(r.ch).length?'<br>':''}<span class="ai">AI</span>${esc(r.text)}`:''}${!Object.keys(r.ch).length&&!r.text?'<span class="hint">待补充</span>':''}</div></div></div>`}).join('')||'<div class="hint">还没有修改</div>';
 document.querySelectorAll('#items [data-r]').forEach(d=>d.onclick=()=>{closeDrawer();openRec(R.find(r=>r.id==d.dataset.r),true)});
 $('#json').textContent=JSON.stringify(payload(),null,1);build();saveDraft()}
-function payload(){return{video:D.videoName,style:D.style,from:D.ver,to:D.next,changes:R.map(r=>{const e=r.el&&byId(r.el);return{n:r.id,t:r.t,element:e?{id:e.id,track:TN[e.track],name:label(e),source:e.src||null}:null,
+function payload(){return{video:D.videoName,style:D.style,from:D.ver,to:D.next,changes:[...R].sort((a,b)=>a.t-b.t).map(r=>{const e=r.el&&byId(r.el);return{n:r.id,t:r.t,element:e?{id:e.id,track:TN[e.track],name:label(e),source:e.src||null}:null,
 set:Object.fromEntries(Object.entries(r.ch).map(([k,[a,b]])=>[k,{from:a,to:b}])),ask_ai:r.text||null}})}}
 let dt=null;function saveDraft(){clearTimeout(dt);dt=setTimeout(()=>fetch('draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(R)}).catch(()=>{}),400)}
 

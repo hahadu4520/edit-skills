@@ -45,6 +45,43 @@ workdir:  ~/Downloads/<id>_work      # 每期一个工作目录，config.json �
 8. **烧录**：`koubo burn <workdir> [--en]`，输出 `<id>_成片.mp4` / `<id>_成片_双语.mp4`。抽几帧检查同步。
 9. **封面**：先挑帧，再跑 `koubo cover <workdir>`。在 `cover.frames` 里填时间 t、脸中心 cx、眼睛高度 eye、裁切宽度 cw 和版式 layout（stack / brush / stagger）。
 
+## 审片和修改（审片台）
+
+每出一版（小样或全片），都用审片台让用户看片、改：用户在网页里边看边标「这里要改」，点元素直接改属性或写一句话，最后点「提交」生成修改单。
+
+1. **打开**：在后台运行（不要等它结束）
+
+   ```
+   python <SKILL>/scripts/review/review.py serve <workdir> --video <这一版成片.mp4> --no-open
+   ```
+
+   它会打印 `http://127.0.0.1:8765/`（端口被占就往后顺延，以打印的为准）。按你所在的 Agent 在侧边栏打开，打不开就去掉 `--no-open` 重跑，弹系统浏览器。地址同时发给用户。
+
+   | Agent | 怎么在侧边栏打开 |
+   |---|---|
+   | Claude 桌面版 | 先跑 `review.py launch <workdir>` 写好 `.claude/launch.json`，再用预览工具启动「审片台」，它会在右侧 Browser 面板打开（不用自己跑 serve） |
+   | Codex 桌面版 | 用内置浏览器（`@Browser`）新开标签打开这个地址 |
+   | Cursor | 用内置浏览器工具打开这个地址；用户点聊天里的 localhost 链接也会在内置浏览器打开 |
+   | VS Code | 用浏览器工具打开，或让用户点链接（localhost 链接默认在集成浏览器打开），也可以命令面板 `Browser: Open Integrated Browser` |
+   | ZCode、Kimi Work 等没有内置浏览器的 | 去掉 `--no-open`，弹系统浏览器 |
+
+2. **等用户说改好了**，然后读修改单：`python <SKILL>/scripts/review/review.py changes <workdir>`。每条有时间点、元素、出处（`source`）、改了哪个属性（从 → 到）和一句话。
+3. **按出处改**：
+
+   | 元素 | 出处 | 怎么改 |
+   |---|---|---|
+   | 字幕 | `cues.txt[j]` | 文字改错字就加进 `fix`；断句不对加 `jieba_words` 或调 `max_chars`；`en` 改 `en.json` 第 j 行。字幕时间由断句算出来，用户拖了时间就按意思调断句 |
+   | 花字 | `config.json highlights[k]` | 改词、改样式（A/B/C1/C2/H） |
+   | 清单 | `config.json lists[k]` | 改条目文字；一句话里的出现时间改 `reveal` |
+   | 运镜 | `config.json camera[k]` | 跳切推近 → `jump`，快推定格 → `punch`，复位 → `reset`；改完跑 `camcheck` |
+   | 哔声 | `config.json beeps[k]` | 「不哔」就删掉这条，核心论点里的词先和用户确认 |
+   | 本集设置 | — | 字幕「只中文」就 burn 时不带 `--en`；每行字数改 `max_chars`；封面版式改 `cover.frames[].layout` |
+
+   花字配色这类系列设置现在脚本还不支持，收到时告诉用户。
+
+4. **重渲**：改完先 `koubo preview` 出关键帧确认，再 `koubo burn`。
+5. **标记完成并打开新一版**：`review.py done <workdir>`，再跑一次 `serve`，版本号自动加 1。
+
 ## 人像运镜【代码强制】
 
 全程一个机位，靠后期放大做出景别变化，让长口播不闷。写在 config.json 的 `camera`（粗剪时间轴，`[时间, 手法, 倍数]`），以 `face_box` 中心为原点放大。burn 和 preview 前自动检查，也可以先跑 `koubo camcheck <workdir>`。
