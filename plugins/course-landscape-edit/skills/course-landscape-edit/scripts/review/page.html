@@ -1,0 +1,320 @@
+<title>审片台</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 审片台：画面 + 整宽多轨时间轴；元素卡片就地弹出；修改单从顶部打开。数据由 review.py 注入 */
+:root{--bg:#f2f2ef;--fg:#1b1c1f;--mut:#6b6d73;--card:#ffffff;--line:#dfded9;--acc:#2f6bff;--accs:#e7eeff;--red:#e2372f;--reds:#fde8e7;--edit:#d9a400;--edits:#fff4cc;--okbg:#e5f4e4;--okfg:#1f5c2a;--warnbg:#fff4df;--warnfg:#6f4500;--stage:#0d0e10;--track:#f8f8f6;
+--k-mark:#e2372f;--k-chap:#8a7cf0;--k-shot:#5f6b7a;--k-trans:#c9892b;--k-move:#2f6bff;--k-anno:#1f9d74;--k-sub:#6d727a;--k-por:#a8998a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141517;--fg:#eef0f3;--mut:#9fa3ab;--card:#1e2023;--line:#33363b;--acc:#6b93ff;--accs:#1f2a45;--red:#ff5a50;--reds:#3a1b1a;--edit:#f0c419;--edits:#3a3112;--okbg:#1c3320;--okfg:#9be0a6;--warnbg:#382c12;--warnfg:#ffd58a;--stage:#000;--track:#191b1e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141517;--fg:#eef0f3;--mut:#9fa3ab;--card:#1e2023;--line:#33363b;--acc:#6b93ff;--accs:#1f2a45;--red:#ff5a50;--reds:#3a1b1a;--edit:#f0c419;--edits:#3a3112;--okbg:#1c3320;--okfg:#9be0a6;--warnbg:#382c12;--warnfg:#ffd58a;--stage:#000;--track:#191b1e;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 32px}
+.proto{font-size:12px;color:var(--mut);margin-bottom:6px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+header h1{font-size:18px;margin:0;flex:1 1 auto;min-width:0}
+.ver{font-size:12px;font-weight:600;background:var(--accs);color:var(--acc);border-radius:999px;padding:1px 8px;vertical-align:2px}
+button,select,input{font:inherit;color:var(--fg)}
+button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 11px;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.mk{background:var(--red);color:#fff;border-color:var(--red)}
+button.sheet b{display:inline-block;min-width:18px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;padding:0 5px;margin-left:2px}
+.check{background:var(--warnbg);color:var(--warnfg);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px}
+#stage{position:relative;background:var(--stage);border-radius:10px 10px 0 0;overflow:hidden;max-width:860px;margin:0 auto}
+video{display:block;width:100%;aspect-ratio:16/9}
+#subov{position:absolute;display:none;align-items:center;justify-content:center;background:rgba(16,17,20,.94);color:#fff;font-size:clamp(11px,2.6vw,22px);border:2px dashed var(--edit);border-radius:4px}
+#chapov{position:absolute;left:0;top:0;width:100%;height:11.1%;background:#f3f1ed;display:none}
+.cs{position:absolute;top:0;height:100%;color:#555;font-weight:600;white-space:nowrap;overflow:hidden}
+.cs i{position:absolute;left:0;right:0;top:44%;height:4px;border-radius:2px;background:#d4d2cd}.cs.thin i{height:1.5px}.cs span{position:absolute;left:0;top:62%;line-height:1}
+.cs.pill{top:22%;height:62%;border-radius:999px;background:#e2e0db;display:flex;align-items:center;justify-content:center}.cs.pill span{position:static}
+.pvtag{position:absolute;right:8px;top:8px;background:var(--edit);color:#000;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;display:none}
+#layc{position:absolute;inset:0;width:100%;height:100%;display:none}
+#lay{position:absolute;inset:0;z-index:4;pointer-events:none}.lb{position:absolute;border:2px dashed #ffd400;background:rgba(255,212,0,.07);cursor:move;pointer-events:auto;touch-action:none}
+.lb span{position:absolute;left:3px;top:3px;font-size:11px;line-height:1.4;background:#ffd400;color:#000;padding:0 5px;border-radius:3px}
+.lb .rz{position:absolute;right:-7px;bottom:-7px;width:14px;height:14px;background:#ffd400;border-radius:3px;cursor:nwse-resize}
+.pxdemo{background:var(--track);border-radius:8px;padding:2px 10px 10px;margin-top:8px}
+#flash{position:absolute;inset:0;border:4px solid var(--red);opacity:0;pointer-events:none;transition:opacity .4s}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-top:0;padding:8px 10px;border-radius:0 0 10px 10px;max-width:860px;margin:0 auto 12px}
+#tc{font-variant-numeric:tabular-nums;color:var(--mut);min-width:96px}
+.hint{color:var(--mut);font-size:12px}
+kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px;background:var(--bg)}
+/* 时间轴 */
+.tlbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 6px}
+.tl{display:grid;grid-template-columns:108px minmax(0,1fr);background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.labels>div,.lane{height:32px;border-bottom:1px solid var(--line)}
+.labels>div{display:flex;align-items:center;gap:6px;padding:0 10px;font-size:12px;color:var(--mut);white-space:nowrap}
+.labels>div i{width:8px;height:8px;border-radius:2px;flex:none}
+.labels .ruler,.lane.ruler{height:24px}.labels .shots,.lane.shots{height:52px}.labels .marks,.lane.marks{height:28px}
+.scroll{overflow-x:auto;position:relative}.inner{position:relative}
+.lane{position:relative;background:var(--track)}.lane.ruler{background:var(--card);cursor:pointer}
+.tick{position:absolute;top:0;height:100%;border-left:1px solid var(--line);font-size:10px;color:var(--mut);padding-left:3px;font-variant-numeric:tabular-nums;pointer-events:none}
+.blk{position:absolute;top:4px;bottom:4px;border-radius:5px;padding:0 7px;font-size:11.5px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:#fff;border:2px solid transparent;user-select:none}
+.blk:hover{filter:brightness(1.1)}
+.blk.sel{border-color:var(--fg)}
+.blk.edited{border:2px dashed var(--edit)}
+.blk .hd{position:absolute;top:0;bottom:0;width:7px;cursor:ew-resize}.blk .hd.l{left:0}.blk .hd.r{right:0}.blk .hd:hover{background:rgba(255,255,255,.35)}
+.shots .blk{display:flex;gap:6px;align-items:center;line-height:1.2;padding:3px}.shots .blk img{height:100%;border-radius:3px;flex:none}
+.trans .blk{width:16px!important;margin-left:-8px;padding:0;border-radius:3px;transform:rotate(45deg) scale(.7)}
+.blk input{width:100%;border:0;background:var(--card);font-size:12px;border-radius:3px;padding:0 4px;height:20px}
+.mark{position:absolute;top:3px;height:22px;min-width:22px;margin-left:-11px;border-radius:11px;background:var(--red);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0 6px}
+.mark.empty{background:var(--card);color:var(--red);border:2px solid var(--red)}
+.mark.sel{box-shadow:0 0 0 2px var(--fg)}
+#ph{position:absolute;top:0;bottom:0;width:2px;background:var(--red);pointer-events:none;z-index:3}
+#ph::before{content:"";position:absolute;top:0;left:-5px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--red)}
+/* 元素卡片 */
+#pop{position:fixed;z-index:20;width:340px;max-width:calc(100vw - 32px);max-height:72vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.2);padding:14px}
+#pop .x{position:absolute;right:8px;top:6px;border:0;background:none;color:var(--mut)}
+#pop h3{margin:2px 0 8px;font-size:15px;padding-right:20px}
+.sec{font-size:12px;color:var(--mut);margin:10px 0 4px;display:flex;justify-content:space-between}
+.f{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.f label{color:var(--mut)}
+.f select,.f input[type=text],.f input[type=number]{width:100%;border:1px solid var(--line);border-radius:7px;padding:4px 6px;background:var(--bg)}
+.f .rg{display:flex;gap:8px;align-items:center}.f .rg input{flex:1}.f .rg output{font-variant-numeric:tabular-nums;width:38px;text-align:right}
+.f.chg label{color:var(--edit);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}.seg button{padding:3px 9px;font-size:12.5px;border-radius:999px}
+.seg button.on{background:var(--accs);border-color:var(--acc);color:var(--acc)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+.ro{font-size:13px}
+.rule{font-size:12px;border-radius:6px;padding:4px 8px;margin:6px 0;background:var(--okbg);color:var(--okfg)}.rule.txt{background:var(--track);color:var(--mut)}
+textarea{width:100%;min-height:54px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--bg);color:var(--fg)}
+.pick{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.pick button{text-align:left;display:flex;gap:8px;align-items:center}.pick i{width:8px;height:8px;border-radius:2px;flex:none}
+.acts{display:flex;gap:8px;margin-top:10px}
+/* 修改单抽屉 */
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--card);border-left:1px solid var(--line);z-index:31;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,.15);padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px)}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--line)}.dh h2{margin:0;font-size:16px}
+.dh .x{border:0;background:none;color:var(--mut);font-size:16px}
+.dbody{flex:1;overflow:auto;padding:12px 16px}.df{padding:12px 16px;border-top:1px solid var(--line);padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}.df button{width:100%}
+.row2{display:grid;grid-template-columns:26px 1fr;gap:4px 8px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}.row2:first-child{border-top:0}
+.row2 .n{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.row2 .m{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}.row2 .txt{font-size:13.5px}
+.row2 del{color:var(--mut)}.row2 ins{text-decoration:none;background:var(--edits);padding:0 2px;border-radius:3px}
+.ai{font-size:11px;border-radius:999px;padding:0 6px;background:var(--accs);color:var(--acc);margin-right:4px}
+.hist summary{cursor:pointer;font-size:13px;padding:4px 0}
+pre{background:var(--track);border-radius:8px;padding:10px;overflow-x:auto;font-size:11.5px;margin:6px 0 0;max-height:260px}
+@media (prefers-reduced-motion:reduce){#flash{transition:none}}
+</style>
+
+<header><h1><span id="ttl"></span> <span class="ver" id="ver"></span></h1><span class="hint" id="saved"></span>
+<button id="epbtn">本集设置</button><button id="open" class="sheet">修改单 <b id="cnt">0</b></button><button id="save" class="pri">提交，出 <span class="nv"></span></button></header>
+<div class="check" id="notes" hidden></div>
+
+<div id="stage"><video id="v" preload="auto" playsinline></video><canvas id="layc"></canvas><div id="chapov"></div><div id="subov"></div><div class="pvtag" id="pvtag">预览</div><div id="lay" hidden></div><div id="flash"></div></div>
+<div class="ctl"><button id="play">播放</button><button id="mk" class="mk">这里要改 M</button><span id="tc"></span>
+<span class="hint"><kbd>空格</kbd> 播放 · <kbd>M</kbd> 这里要改 · <kbd>←</kbd><kbd>→</kbd> 逐帧 · <kbd>J</kbd><kbd>K</kbd> 切镜头</span></div>
+<div class="tlbar"><span style="flex:1"></span>
+<label class="hint" for="zoom">缩放</label><input id="zoom" type="range" min="14" max="90" value="28"></div>
+<div class="tl"><div class="labels" id="labels"></div><div class="scroll" id="scroll"><div class="inner" id="inner"><div id="ph"></div></div></div></div>
+
+<div id="pop" hidden></div>
+<div id="scrim" hidden></div>
+<div id="drawer" hidden role="dialog" aria-label="修改单">
+<div class="dh"><div><div class="hint" id="vv"></div><h2>修改单</h2></div><button class="x" id="dclose" aria-label="关闭">✕</button></div>
+<div class="dbody"><div id="items"></div>
+<div class="hist"><div class="hint" id="histh" style="margin:16px 0 6px">之前的版本</div>
+<div id="hist"></div></div>
+<details style="margin-top:14px"><summary class="hint">交给剪辑的文件</summary><pre id="json"></pre></details></div>
+<div class="df"><button class="pri" id="save2">提交，出 <span class="nv"></span></button></div>
+</div>
+
+<script>
+const D=/*DATA*/null;
+const $=s=>document.querySelector(s),v=$('#v');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const fmt=t=>{const m=Math.floor(t/60),s=(t%60).toFixed(1).padStart(4,'0');return m+':'+s};
+const TN={chap:'进度条',shot:'镜头',trans:'转场',move:'运镜',anno:'标注与动效',sub:'字幕',por:'人像框',ep:'本集设置'};
+const EL=[];D.tracks.forEach(t=>t.items.forEach((it,i)=>{it.track=t.key;it.id=it.id||t.key+'-'+(i+1);EL.push(it)}));
+const EP={id:'ep',track:'ep',t0:0,t1:0,name:'本集设置',f:D.ep||[]};EL.push(EP);
+const byId=id=>EL.find(e=>e.id===id);
+// 修改单：每条 = 一个位置 + 一个元素（可后补）+ 参数改动 + 一句话
+let R=D.saved||[];
+let pps=28,selEl=null,selRec=null;
+v.src=D.video;v.muted=false;$('#ttl').textContent=D.title;$('#ver').textContent=D.ver;document.querySelectorAll('.nv').forEach(x=>x.textContent=D.next);$('#vv').textContent=D.ver+' → '+D.next;
+if(D.notes){$('#notes').hidden=false;$('#notes').textContent=D.notes}
+$('#hist').innerHTML=(D.history||[]).map(h=>`<details><summary>${esc(h.from)} → ${esc(h.to)} · ${h.n} 处</summary><div class="hint">${esc(h.summary)}</div></details>`).join('')||'<div class="hint">这是第一版</div>';
+const cvs=$('#layc');cvs.width=D.W;cvs.height=D.H;
+const recOf=id=>R.find(r=>r.el===id);
+const val=(e,k)=>{const f=e.f.find(f=>f.k===k);if(f.g){const r=R.find(r=>r.el&&r.el.startsWith(e.track+'-')&&r.ch[k]);return r?r.ch[k][1]:f.v}const r=recOf(e.id);return r&&r.ch[k]?r.ch[k][1]:f.v};
+const label=e=>e.track==='sub'?val(e,'text'):e.track==='chap'?val(e,'name'):e.name;
+
+const labels=$('#labels'),inner=$('#inner');
+labels.innerHTML='<div class="ruler"></div><div class="marks"><i style="background:var(--k-mark)"></i>修改点</div>'+D.tracks.map(t=>`<div class="${t.key==='shot'?'shots':''}"><i style="background:var(--k-${t.key})"></i>${t.name}</div>`).join('');
+const at=t=>EL.filter(e=>t>=e.t0-0.05&&t<e.t1+0.05&&e.track!=='chap'&&e.track!=='ep');
+
+function build(){inner.querySelectorAll('.lane').forEach(e=>e.remove());inner.style.width=D.duration*pps+'px';
+const ru=lane('ruler');for(let s=0;s<=D.duration;s+=pps<22?5:2){const k=document.createElement('div');k.className='tick';k.style.left=s*pps+'px';k.textContent=fmt(s);ru.append(k)}
+ru.onclick=e=>seekX(e,ru);
+const ml=lane('marks');ml.onclick=e=>{if(e.target===ml)seekX(e,ml)};
+R.forEach(r=>{const d=document.createElement('div');d.className='mark'+(r.el?'':' empty')+(selRec===r?' sel':'');d.id='m_'+r.id;d.style.left=r.t*pps+'px';d.textContent=r.id;
+d.title=r.el?label(byId(r.el)):'未选元素';d.onclick=e=>{e.stopPropagation();openRec(r,true)};ml.append(d)});
+D.tracks.forEach(t=>{const ln=lane(t.key==='shot'?'shots':t.key==='trans'?'trans':'');ln.onclick=e=>{if(e.target===ln)seekX(e,ln)};
+t.items.forEach(it=>{const b=document.createElement('div');b.className='blk';b.id='b_'+it.id;b.style.background=`var(--k-${t.key})`;
+const t0=t.key==='sub'?+val(it,'t0'):it.t0,t1=t.key==='sub'?+val(it,'t1'):it.t1;b.style.left=t0*pps+'px';b.style.width=Math.max(4,(t1-t0)*pps)+'px';
+b.innerHTML=t.key==='shot'?`<img alt="" src="${D.thumbs[it.thumb]}"><span><b>${it.id.replace('shot-','S')}</b><br>${esc(it.name)}</span>`:(t.key==='trans'?'':esc(label(it)));
+b.title=label(it)+'  '+fmt(t0)+'–'+fmt(t1);
+if(recOf(it.id))b.classList.add('edited');if(selEl===it)b.classList.add('sel');
+if(t.key==='sub'){b.innerHTML+='<span class="hd l"></span><span class="hd r"></span>';dragSub(it,b)}
+else b.onclick=e=>{e.stopPropagation();openEl(it,b,true)};
+ln.append(b)})});
+inner.append($('#ph'));moveph()}
+function lane(cls){const l=document.createElement('div');l.className='lane '+cls;inner.append(l);return l}
+function seekX(e,el){const r=el.getBoundingClientRect();v.currentTime=Math.max(0,Math.min(D.duration,(e.clientX-r.left)/pps));closePop()}
+function moveph(){$('#ph').style.left=v.currentTime*pps+'px';subPreview();overlays()}
+$('#zoom').oninput=e=>{pps=+e.target.value;closePop();build()};
+function subPreview(){const o=$('#subov'),s=EL.find(e=>e.track==='sub'&&v.currentTime>=e.t0&&v.currentTime<e.t1&&recOf(e.id)&&recOf(e.id).ch.text);
+if(!s){o.style.display='none';return}const r=D.subRect;Object.assign(o.style,{display:'flex',left:r[0]*100+'%',top:r[1]*100+'%',width:r[2]*100+'%',height:r[3]*100+'%'});o.textContent=val(s,'text')}
+
+// 改动记进修改单
+function setCh(e,k,nv,t){let r=recOf(e.id);const ov=e.f.find(f=>f.k===k).v;
+if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:t??Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)),el:e.id,ch:{},text:''};R.push(r)}
+if(String(nv)===String(ov))delete r.ch[k];else r.ch[k]=[ov,nv];return r}
+function cleanup(){R=R.filter(r=>!r.el||Object.keys(r.ch).length||r.text||r===selRec)}
+
+// 元素卡片
+function openEl(e,anchor,seek,rec){if(e.track==='sub')return inlineSub(e,rec);selEl=e;selRec=rec||recOf(e.id)||null;if(seek){v.pause();v.currentTime=Math.max(e.t0+0.05,Math.min(e.t1-0.05,v.currentTime>=e.t0&&v.currentTime<e.t1?v.currentTime:e.t0+0.05))}
+build();const pop=$('#pop'),r0=recOf(e.id);
+const field=f=>{const cur=val(e,f.k),chg=r0&&r0.ch[f.k];let w='';
+if(f.type==='seg')w=`<div class="seg" data-k="${f.k}">${f.opts.map(o=>`<button type="button" data-v="${esc(o.v)}" class="${String(cur)===String(o.v)?'on':''}" ${o.off?'disabled title="'+esc(o.off)+'"':''}>${esc(o.v)}${o.tag?' '+o.tag:''}</button>`).join('')}</div>`;
+else if(f.type==='select')w=`<select data-k="${f.k}" id="f_${f.k}">${f.opts.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+else if(f.type==='range')w=`<div class="rg"><input type="range" data-k="${f.k}" id="f_${f.k}" min="${f.min}" max="${f.max}" step="${f.step}" value="${cur}"><output>${cur}${f.unit||''}</output></div>`;
+else if(f.type==='text')w=`<input type="text" data-k="${f.k}" id="f_${f.k}" value="${esc(cur)}">`;
+else w=`<div class="ro">${esc(cur)}</div>`;
+return`<div class="f ${chg?'chg':''}"><label for="f_${f.k}">${esc(f.label)}</label>${w}</div>${f.note?`<div class="hint" style="margin:-2px 0 4px 80px">${esc(f.note)}</div>`:''}`};
+const editable=e.f.filter(f=>f.type!=='ro'&&f.type!=='box'&&!f.g),ro=e.f.filter(f=>f.type==='ro');
+const live=canPrev(e)&&editable.length;
+pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><h3>${esc(label(e))} <span class="hint">${fmt(e.t0)}–${fmt(e.t1)}</span></h3>
+${ro.map(field).join('')}${editable.map(field).join('')}${e.track==='shot'?'<div class="hint">拖画面上的框，改位置和大小</div>':''}${e.track==='chap'?'<div class="hint">进度条样式在「本集设置」里改</div>':''}
+<div class="sec"><span>一句话改</span></div>
+<textarea id="ai" placeholder="${esc(e.ph||'')}">${esc(r0?r0.text:'')}</textarea>
+<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':editable.length&&!live?'出片后看效果':live?'改了马上能看':''}</span><button id="undo" ${r0?'':'hidden'}>撤销</button></div>`;
+pop.hidden=false;place(pop,$('#b_'+e.id)||anchor);if(e.track==='shot')showLay(e);else $('#lay').hidden=true;
+pop.querySelector('.x').onclick=closePop;
+pop.querySelectorAll('.seg').forEach(g=>g.onclick=ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));stage(g.dataset.k,b.dataset.v)});
+pop.querySelectorAll('select,input[type=text]').forEach(i=>i.oninput=()=>stage(i.dataset.k,i.value));
+pop.querySelectorAll('input[type=range]').forEach(i=>{i.oninput=()=>{i.nextElementSibling.textContent=i.value+(e.f.find(f=>f.k===i.dataset.k).unit||'')};i.onchange=()=>stage(i.dataset.k,+i.value)});
+pop.querySelectorAll('input,textarea,select').forEach(i=>i.addEventListener('keydown',ev=>ev.stopPropagation()));
+// 一改就记、马上预览
+function stage(k,nv){const f=e.f.find(f=>f.k===k);if(f.g)R.forEach(r=>{if(r.el&&r.el.startsWith(e.track+'-')&&r.el!==e.id)delete r.ch[k]});
+const r=recFor(e);setCh(e,k,nv,r.t);if(k==='layout'){['cbox','pbox','sbox'].forEach(x=>delete r.ch[x]);showLay(e)}pop.querySelector(`[data-k="${k}"]`).closest('.f').classList.toggle('chg',!!r.ch[k]);done();if(canPrev(e))preview(e)}
+function done(){const r=recOf(e.id),has=r&&(Object.keys(r.ch).length||r.text);$('#st').textContent=has?'已记入修改单':'';$('#undo').hidden=!has;render()}
+$('#ai').oninput=()=>{const r=recFor(e);r.text=$('#ai').value.trim();$('#cnt').textContent=R.length;$('#st').textContent=r.text||Object.keys(r.ch).length?'已记入修改单':''};$('#ai').onchange=done;
+$('#undo').onclick=()=>{R=R.filter(x=>x.el!==e.id);selRec=null;render();openEl(e,null,false);if(canPrev(e))preview(e);drawLay()}}
+const canPrev=e=>['chap','sub','shot'].includes(e.track);
+// 镜头布局：版式 + 拖框；预览用视频帧重新拼
+const LY=D.layout,SRC=LY.src,PRE=LY.presets;
+let tmp={};
+function lay(e){const L=PRE[val(e,'layout')]||PRE[LY.def],r=recOf(e.id),g=k=>r&&r.ch[k]?String(r.ch[k][1]).split(',').map(Number):null;
+const T=selEl===e?tmp:{},c=T.c||g('cbox'),p=T.p||g('pbox'),sb=T.s!=null?[T.s]:g('sbox');
+return{c:c?[c[0],c[1],c[2],c[2]*L.c[3]/L.c[2]]:L.c,p:L.p?(p?[p[0],p[1],p[2],p[2]*L.p[3]/L.p[2]]:L.p):null,s:sb?sb[0]:L.s}}
+function showLay(e){const o=$('#lay');o.hidden=false;const L=lay(e),W=D.W,H=D.H,pc=(x,d)=>x/d*100+'%';
+const box=(k,r,lb)=>`<div class="lb" data-k="${k}" style="left:${pc(r[0],W)};top:${pc(r[1],H)};width:${pc(r[2],W)};height:${pc(r[3],H)}"><span>${lb}</span>${k!=='s'?'<i class="rz"></i>':''}</div>`;
+o.innerHTML=box('c',L.c,'内容')+(L.p?box('p',L.p,'人像'):'')+box('s',[SRC.s[0],L.s,SRC.s[2],SRC.s[3]],'字幕');
+o.querySelectorAll('.lb').forEach(b=>b.onpointerdown=ev=>{ev.preventDefault();ev.stopPropagation();v.pause();const k=b.dataset.k,rz=ev.target.classList.contains('rz'),sc=D.W/$('#stage').clientWidth,x0=ev.clientX,y0=ev.clientY,L0=lay(e);let cur=null;b.setPointerCapture(ev.pointerId);
+b.onpointermove=m=>{const dx=(m.clientX-x0)*sc,dy=(m.clientY-y0)*sc;
+if(k==='s'){cur=Math.max(H*.55,Math.min(H-SRC.s[3]-4,L0.s+dy));b.style.top=cur/H*100+'%'}
+else{const r=L0[k],asp=r[3]/r[2];let[x,y,w]=r;if(rz)w=Math.max(k==='c'?W*.45:W*.08,Math.min(k==='c'?W*.95:W*.32,w+dx));else{x+=dx;y+=dy}
+const h=w*asp,m=W*.025;x=Math.max(m,Math.min(W-m-w,x));y=Math.max(LY.top,Math.min(H-m-h,y));cur=[x,y,w];Object.assign(b.style,{left:pc(x,W),top:pc(y,H),width:pc(w,W),height:pc(h,H)})}
+tmp[k]=cur;overlays()};
+b.onpointerup=()=>{b.onpointermove=b.onpointerup=null;tmp={};if(cur==null)return;const r=recFor(e),nv=Array.isArray(cur)?cur.map(x=>Math.round(x)).join(','):String(Math.round(cur));
+setCh(e,{c:'cbox',p:'pbox',s:'sbox'}[k],nv,r.t);render();showLay(e);overlays();const st=$('#st');if(st){st.textContent='已记入修改单';$('#undo').hidden=false}}})}
+function drawLay(){const cv=$('#layc'),t=v.currentTime,sh=EL.find(e=>e.track==='shot'&&t>=e.t0&&t<e.t1),r=sh&&recOf(sh.id),
+on=!!sh&&(!!(r&&['layout','cbox','pbox','sbox'].some(k=>r.ch[k]))||(selEl===sh&&Object.keys(tmp).length>0));cv.style.display=on?'block':'none';if(!on)return false;
+const g=cv.getContext('2d'),L=lay(sh),W=D.W,H=D.H;g.fillStyle=D.bg;g.fillRect(0,0,W,H);g.drawImage(v,0,0,W,LY.top,0,0,W,LY.top);
+const blit=(a,d,rad)=>{g.save();g.beginPath();g.roundRect?g.roundRect(d[0],d[1],d[2],d[3],rad):g.rect(d[0],d[1],d[2],d[3]);g.clip();g.drawImage(v,a[0],a[1],a[2],a[3],d[0],d[1],d[2],d[3]);g.restore()};
+blit(SRC.c,L.c,W*.0146);if(L.p)blit(SRC.p,L.p,W*.0135);const S=SRC.s;g.drawImage(v,S[0],S[1],S[2],S[3],S[0],L.s,S[2],S[3]);return true}
+// 本集设置：整集一起变的属性
+const THEME=D.themes||{};
+function openEp(){closePop();const pop=$('#pop'),r0=recOf('ep'),F=EP.f,
+fld=f=>{const on=r0&&r0.ch[f.k];if(f.type==='seg')return`<div class="f ${on?'chg':''}"><label>${esc(f.label)}</label><div class="seg" data-k="${f.k}">${f.opts.map(x=>`<button type="button" data-v="${esc(x.v)}" class="${String(val(EP,f.k))===String(x.v)?'on':''}" ${x.off?'disabled':''}>${esc(x.v)}${x.tag?' '+x.tag:''}</button>`).join('')}</div></div>`;
+return`<div class="f ${on?'chg':''}"><label for="f_${f.k}">${esc(f.label)}</label><input type="text" id="f_${f.k}" data-k="${f.k}" value="${esc(val(EP,f.k))}"></div>`},
+grp=(lv,h)=>{const a=F.filter(f=>(f.lv||'本集')===lv);return a.length?`<div class="sec"><span>${h}</span></div>${a.map(fld).join('')}`:''};
+pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><h3>本集设置 <span class="hint">${esc(D.styleName)}</span></h3>
+${grp('本集','本集')}${grp('系列','系列 · 同系列每集都用')}
+<div class="sec"><span>一句话改</span></div><textarea id="epai" placeholder="${esc(D.epHint||'')}">${esc(r0?r0.text:'')}</textarea>
+<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':''}</span></div>`;
+pop.hidden=false;place(pop,$('#epbtn'));pop.querySelector('.x').onclick=closePop;
+const rec=()=>{let r=recOf('ep');if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:0,el:'ep',ch:{},text:''};R.push(r)}return r};
+const put=(k,nv)=>{rec();setCh(EP,k,nv,0);const f=pop.querySelector(`[data-k="${k}"]`);f&&f.closest('.f').classList.toggle('chg',!!(recOf('ep')&&recOf('ep').ch[k]));cleanup();render();$('#st').textContent='已记入修改单';v.pause();overlays()};
+pop.querySelectorAll('.seg').forEach(g=>g.onclick=ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));put(g.dataset.k,b.dataset.v)});
+pop.querySelectorAll('input[type=text]').forEach(i=>{i.onchange=()=>put(i.dataset.k,i.value.trim())});
+$('#epai').onchange=()=>{const tx=$('#epai').value.trim();if(!recOf('ep')&&!tx)return;rec().text=tx;cleanup();render()};
+pop.querySelectorAll('input,textarea').forEach(i=>i.addEventListener('keydown',ev=>ev.stopPropagation()))}
+$('#epbtn').onclick=e=>{e.stopPropagation();openEp()};
+function recFor(e){let r=recOf(e.id);const m=selRec&&!selRec.el?selRec:null;
+if(m){m.el=e.id;if(r&&r!==m){R=R.filter(x=>x!==r);Object.assign(m.ch,r.ch);m.text=m.text||r.text}r=m}
+if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)),el:e.id,ch:{},text:''};R.push(r)}
+selRec=r;return r}
+// 预览：浏览器里先画出来，出片以剪辑结果为准
+let pv=null;function preview(e){const a=e.track==='chap'?Math.max(0,v.currentTime-0.01):Math.max(0,e.t0-0.4);pv={end:e.track==='chap'?a+2:e.t1};v.currentTime=a;v.play()}
+function overlays(){const t=v.currentTime;let pvOn=drawLay();
+const CB=D.chapBar,ep=recOf('ep'),cr=CB&&R.some(r=>(r.el&&r.el.startsWith('chap-')&&r.ch.name)||(r.el==='ep'&&['look','color','size'].some(k=>r.ch[k]))),cv=$('#chapov');cv.style.display=cr?'block':'none';
+if(cr){pvOn=true;cv.style.height=CB.stripH/D.H*100+'%';cv.style.background=D.bg;const ch=EL.filter(e=>e.track==='chap'),look=EP.f.some(f=>f.k==='look')?val(EP,'look'):'分段条',col=THEME[val(EP,'color')]||CB.color,
+sw=$('#stage').clientWidth/D.W,fs=sw*CB.font*({小:1,中:1.35,大:1.75}[EP.f.some(f=>f.k==='size')?val(EP,'size'):'小']||1),cur=ch.findIndex(c=>t>=c.t0&&t<c.t1),tot=ch[ch.length-1].t1-ch[0].t0,span=CB.x1-CB.x0-CB.gap*(ch.length-1);let x=CB.x0;
+cv.innerHTML=ch.map((c,i)=>{const w=span*(c.t1-c.t0)/tot,L=x/D.W*100,Wd=w/D.W*100;x+=w+CB.gap;const hi=i<=cur;
+return look==='胶囊'?`<div class="cs pill" style="left:${L}%;width:${Wd}%;font-size:${fs}px;${i===cur?`background:${col};color:#fff`:''}"><span>${esc(val(c,'name'))}</span></div>`
+:`<div class="cs ${look==='细线'?'thin':''}" style="left:${L}%;width:${Wd}%;font-size:${fs}px;${i===cur?'color:#111':''}"><i style="${hi?`background:${col}`:''}"></i><span>${esc(val(c,'name'))}</span></div>`}).join('')}
+$('#pvtag').style.display=pvOn||$('#subov').style.display==='flex'?'block':'none';
+if(pv&&t>=pv.end){pv=null;v.pause()}}
+// 字幕：点一下直接改字，拖块改时间
+function dragSub(e,b){b.onpointerdown=ev=>{if(ev.target.tagName==='INPUT')return;ev.stopPropagation();const bb=b.getBoundingClientRect(),mode=ev.clientX-bb.left<9?'l':bb.right-ev.clientX<9?'r':'m';
+const x0=ev.clientX,a0=+val(e,'t0'),a1=+val(e,'t1');let moved=false,n0=a0,n1=a1;b.setPointerCapture(ev.pointerId);
+b.onpointermove=m=>{const d=(m.clientX-x0)/pps;if(Math.abs(m.clientX-x0)>3)moved=true;if(!moved)return;const r=x=>Math.round(x*10)/10;
+if(mode==='m'){n0=r(Math.max(0,Math.min(D.duration-(a1-a0),a0+d)));n1=r(n0+a1-a0)}else if(mode==='l')n0=r(Math.max(0,Math.min(a1-0.5,a0+d)));else n1=r(Math.min(D.duration,Math.max(a0+0.5,a1+d)));
+b.style.left=n0*pps+'px';b.style.width=(n1-n0)*pps+'px';b.title=fmt(n0)+'–'+fmt(n1)};
+b.onpointerup=()=>{b.onpointermove=b.onpointerup=null;if(!moved){inlineSub(e);return}const r=setCh(e,'t0',n0,n0);setCh(e,'t1',n1,n0);r.t=n0;cleanup();render();$('#saved').textContent='已加入'}}}
+function inlineSub(e,rec){v.pause();v.currentTime=+val(e,'t0')+0.05;if(rec&&!rec.el){const ex=recOf(e.id);if(ex&&ex!==rec){R=R.filter(x=>x!==ex);Object.assign(rec.ch,ex.ch);rec.text=rec.text||ex.text}rec.el=e.id}$('#pop').hidden=true;selEl=null;selRec=null;build();const b=$('#b_'+e.id);b.style.width=Math.max(170,(val(e,'t1')-val(e,'t0'))*pps)+'px';b.style.zIndex=5;
+b.innerHTML=`<input id="si" value="${esc(val(e,'text'))}" aria-label="字幕文字">`;const i=$('#si');i.focus();i.select();let fin=false;
+const done=ok=>{if(fin)return;fin=true;if(ok&&i.value.trim()){setCh(e,'text',i.value.trim());cleanup()}setTimeout(()=>{render()},0)};
+i.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter')done(true);if(ev.key==='Escape')done(false)};i.onblur=()=>done(true)}
+// 修改点：先记位置，再选元素
+function addMark(){const t=+v.currentTime.toFixed(2),r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t,el:null,ch:{},text:''};R.push(r);R.sort((a,b)=>a.t-b.t);
+const f=$('#flash');f.style.opacity=1;setTimeout(()=>f.style.opacity=0,250);render();const tb=$('#open');tb.animate&&tb.animate([{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:400});
+if(v.paused)openRec(r,false)}
+$('#mk').onclick=addMark;
+function openRec(r,seek){if(seek){v.pause();v.currentTime=r.t}if(r.el){const e=byId(r.el);build();openEl(e,$('#b_'+e.id),false,r);return}
+selRec=r;selEl=null;build();const pop=$('#pop'),cand=at(r.t);
+pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><div class="hint">修改点 ${r.id} · ${fmt(r.t)}</div><h3>改哪个？</h3>
+<div class="pick">${cand.map(e=>`<button data-id="${e.id}"><i style="background:var(--k-${e.track})"></i><span><span class="hint">${TN[e.track]}</span> ${esc(label(e))}</span></button>`).join('')}</div>
+<div class="sec"><span>一句话改</span></div><textarea id="ai0" placeholder="例：节奏太拖">${esc(r.text)}</textarea>
+<div class="acts"><button id="sv0">保存</button><button id="del0">删除</button></div>`;
+pop.hidden=false;place(pop,$('#m_'+r.id));pop.querySelector('.x').onclick=closePop;
+$('#ai0').addEventListener('keydown',ev=>ev.stopPropagation());
+pop.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{r.text=$('#ai0').value.trim()||r.text;const e=byId(b.dataset.id);openEl(e,$('#b_'+e.id),false,r)});
+$('#sv0').onclick=()=>{r.text=$('#ai0').value.trim();closePop();render()};$('#del0').onclick=()=>{R=R.filter(x=>x!==r);closePop();render()}}
+function place(pop,anchor){const a=anchor.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
+let x=Math.min(innerWidth-w-16,Math.max(16,a.left+Math.min(a.width,200)/2-w/2)),y=a.bottom+8;if(y+h>innerHeight-8)y=Math.max(8,a.top-h-8);Object.assign(pop.style,{left:x+'px',top:y+'px'})}
+function closePop(){if($('#pop').hidden)return;$('#pop').hidden=true;$('#lay').hidden=true;tmp={};selEl=null;selRec=null;cleanup();build()}
+document.addEventListener('pointerdown',e=>{const p=$('#pop');if(!p.hidden&&!p.contains(e.target)&&!e.target.closest('.blk,.mark'))closePop()});
+
+function desc(r){const e=r.el&&byId(r.el);if(!e)return'';const fl=k=>e.f.find(f=>f.k===k).label;
+const ch=Object.entries(r.ch).filter(([k])=>k!=='t0'&&k!=='t1');if(r.ch.t0||r.ch.t1){const o=[e.f.find(f=>f.k==='t0').v,e.f.find(f=>f.k==='t1').v],n=[val(e,'t0'),val(e,'t1')];ch.push(['时间',[o[0]+'–'+o[1]+'s',n[0]+'–'+n[1]+'s']])}
+const bx=(k,x)=>k==='sbox'?'高 '+x:(([X,Y,W])=>`x${X} y${Y} 宽${W}`)(String(x).split(','));ch.forEach(c=>{if(c[0].endsWith('box'))c[1]=[bx(c[0],c[1][0]),bx(c[0],c[1][1])]});
+return ch.map(([k,[a,b]])=>k==='时间'?`时间 <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:k==='text'?`<del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:`${esc(fl(k))} <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`).join('<br>')}
+function render(){R.sort((a,b)=>a.t-b.t);$('#cnt').textContent=R.length;
+$('#items').innerHTML=R.map(r=>{const e=r.el&&byId(r.el);return`<div class="row2" data-r="${r.id}"><span class="n">${r.id}</span><div><div class="m">${fmt(r.t)} · ${r.ep?'本集设置':e?esc(TN[e.track]+'：'+label(e)):'未选元素'}</div><div class="txt">${desc(r)}${r.text?`${Object.keys(r.ch).length?'<br>':''}<span class="ai">AI</span>${esc(r.text)}`:''}${!Object.keys(r.ch).length&&!r.text?'<span class="hint">待补充</span>':''}</div></div></div>`}).join('')||'<div class="hint">还没有修改</div>';
+document.querySelectorAll('#items [data-r]').forEach(d=>d.onclick=()=>{closeDrawer();openRec(R.find(r=>r.id==d.dataset.r),true)});
+$('#json').textContent=JSON.stringify(payload(),null,1);build();saveDraft()}
+function payload(){return{video:D.videoName,style:D.style,from:D.ver,to:D.next,changes:R.map(r=>{const e=r.el&&byId(r.el);return{n:r.id,t:r.t,element:e?{id:e.id,track:TN[e.track],name:label(e),source:e.src||null}:null,
+set:Object.fromEntries(Object.entries(r.ch).map(([k,[a,b]])=>[k,{from:a,to:b}])),ask_ai:r.text||null}})}}
+let dt=null;function saveDraft(){clearTimeout(dt);dt=setTimeout(()=>fetch('draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(R)}).catch(()=>{}),400)}
+
+v.addEventListener('timeupdate',()=>{$('#tc').textContent=fmt(v.currentTime)+' / '+fmt(D.duration);moveph()});
+(function loop(){if(!v.paused){$('#ph').style.left=v.currentTime*pps+'px';subPreview();overlays()}requestAnimationFrame(loop)})();
+v.onplay=()=>{$('#play').textContent='暂停';if(!pv)closePop()};v.onpause=()=>$('#play').textContent='播放';$('#play').onclick=()=>v.paused?v.play():v.pause();
+const shots=EL.filter(e=>e.track==='shot');
+document.addEventListener('keydown',e=>{const tg=e.target.tagName;if(tg==='TEXTAREA'||tg==='INPUT'||tg==='SELECT')return;const k=e.key.toLowerCase();
+if(k===' '){e.preventDefault();v.paused?v.play():v.pause()}
+else if(k==='m'){e.preventDefault();addMark()}
+else if(k==='escape'){if(!$('#drawer').hidden)closeDrawer();else closePop()}
+else if(k==='arrowright'||k==='arrowleft'){e.preventDefault();v.pause();v.currentTime=Math.max(0,v.currentTime+(k==='arrowright'?1:-1)/24)}
+else if(k==='j'||k==='k'){const i=shots.findIndex(s=>v.currentTime>=s.t0&&v.currentTime<s.t1)+(k==='k'?1:-1);v.pause();v.currentTime=shots[Math.max(0,Math.min(shots.length-1,i))].t0+0.05}});
+function openDrawer(){closePop();$('#drawer').hidden=false;$('#scrim').hidden=false}
+function closeDrawer(){$('#drawer').hidden=true;$('#scrim').hidden=true}
+$('#open').onclick=openDrawer;$('#dclose').onclick=closeDrawer;$('#scrim').onclick=closeDrawer;
+const submit=async()=>{cleanup();render();if(!R.length){$('#saved').textContent='还没有修改';return}
+try{const r=await fetch('submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
+openDrawer();$('#saved').textContent='已提交';$('#items').insertAdjacentHTML('afterbegin',`<div class="check">已提交 ${R.length} 处。回到 Agent 说一声「改好了」，它会按修改单出 ${esc(D.next)}。<br><span class="hint">${esc(j.path)}</span></div>`)}
+catch(err){$('#saved').textContent='提交失败：'+err.message}};$('#save').onclick=submit;$('#save2').onclick=submit;
+addEventListener('resize',closePop);
+render();
+</script>
