@@ -14,6 +14,16 @@
 
 每个风格的样片截图和详细说明，见各自目录里的 README：[koubo-edit](plugins/koubo-edit/skills/koubo-edit/README.md) · [pixel-edit](plugins/pixel-edit/skills/pixel-edit/README.md) · [course-landscape-edit](plugins/course-landscape-edit/skills/course-landscape-edit/README.md)。
 
+## 出片后怎么改：审片台
+
+每出一版，Agent 会打开**审片台**：一个本地网页，在 Agent 的侧边栏（或浏览器）里边看片边改。
+
+1. 看到要改的地方按 `M` 标一下，点时间轴上的元素（字幕、花字、镜头、运镜、转场……）直接改：选项点一下、字幕改字、拖块改时间、拖框改位置，能预览的马上预览。说不清的写一句话。
+2. 整集一起换的（主题色、双语、布景等）在右上角「本集设置」里改。
+3. 点「提交」，回 Agent 说一声「改好了」。它按修改单逐条改、只重渲改到的地方，出下一版后再打开审片台。
+
+在哪打开：Claude 桌面版在右侧 Browser 面板；Codex、Cursor、VS Code 在各自的内置浏览器；ZCode、Kimi Work 等没有内置浏览器的弹系统浏览器。三个风格都支持，能改什么按[维度表](DIMENSIONS.md)来。
+
 ## 安装
 
 ### Claude Code
@@ -71,15 +81,17 @@ plugins/
       AGENTS.md / README.md            给其他 Agent 的入口 / 给人看的说明
       check.sh / install.sh            依赖自检 / 一键安装（Windows 是 .ps1）
       scripts/                         样板片的完整剪辑工程，新片照着改
+      scripts/review/                  审片台（从 shared/review/ 复制来的，不要直接改）
       fonts/  examples/                字体 / 样板片的时间轴和截图
 DIMENSIONS.md                          剪辑维度配置表：所有风格和审片台的总表
-shared/                                各风格共用的代码和资源（待抽取）
+shared/review/                         审片台正本：review.py（本地服务）+ page.html（网页）
+shared/sync.sh                         改了 shared/ 后运行，复制到各风格的 scripts/review/
 install.sh / install.ps1               非 Claude Code 的安装脚本：install.sh <插件名>
 ```
 
 三个风格的目录结构相同，都是 `plugins/<插件名>/skills/<插件名>/` 下放 SKILL.md、脚本和依赖脚本。
 
-加新风格：复制一个 `plugins/<风格>/` 目录，改 SKILL.md、plugin.json 和 check.sh 里要检查的依赖，在 marketplace.json 里加一行，README 的「包含哪些风格」表格和仓库结构各加一行，DIMENSIONS.md 的「风格组合」表加一列。**每个风格都必须带 check + install，SKILL.md 第 0 步先自检、缺了由 Agent 自己装**，不能把装依赖留给用户。
+加新风格：复制一个 `plugins/<风格>/` 目录，改 SKILL.md、plugin.json 和 check.sh 里要检查的依赖，在 marketplace.json 里加一行，README 的「包含哪些风格」表格和仓库结构各加一行，DIMENSIONS.md 的「风格组合」表加一列；要接审片台，在 `shared/review/review.py` 里加这个风格的读法，把风格名加进 `shared/sync.sh`，SKILL.md 加「审片和修改」一节。**每个风格都必须带 check + install，SKILL.md 第 0 步先自检、缺了由 Agent 自己装**，不能把装依赖留给用户。
 
 ## 版权
 

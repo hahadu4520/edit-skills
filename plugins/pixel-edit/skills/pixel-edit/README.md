@@ -36,6 +36,8 @@
 
 3. Agent 会依次给你：镜头表（哪句用真人、哪句用像素 B-roll、哪句用界面卡片）→ 关键帧 → 开头 1 分钟小样 → 竖版成片 → 需要时出横版和双语字幕 → 封面。
 
+出片后要改，Agent 会打开**审片台**（侧边栏或浏览器里的网页）：点时间轴上的元素直接改，写不清的写一句话，点「提交」后回 Agent 说「改好了」，它会出下一版。见[总 README](../../../../README.md#出片后怎么改审片台)。
+
 **第一次用之前，先把主角换成你自己的形象**：样板里的棕色小熊是 hahadu 的频道形象。让 Agent“把像素主角换成我的形象”，给它一张你的头像或 logo，它会照同样尺寸画一个替换掉（见 SKILL.md「主角」一节）。
 
 原片没有烧录字幕时，需要转写模型：从 [sherpa-onnx releases](https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models) 下载 `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17` 和 `silero_vad.onnx`，放进 `scripts/`。
