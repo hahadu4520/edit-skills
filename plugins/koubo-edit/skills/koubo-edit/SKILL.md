@@ -5,6 +5,8 @@ description: 「朴素版口播」口播视频剪辑流水线：粗剪（去停�
 
 # 朴素版口播（口播剪辑流水线）
 
+> **维度表**：这个风格是[剪辑维度配置表](https://github.com/hahadu4520/edit-skills/blob/main/DIMENSIONS.md)里的一列。改风格、加新手法前，先在表里找到对应的维度和属性，按表里的 ✓ 允许 / △ 待试 / ✗ 禁用 处理，再改这里；表和本文件要保持一致。
+
 ## 第 0 步：先自检依赖（每次开始剪辑前都做）
 
 运行 `bash <SKILL>/check.sh`（Windows：`powershell -ExecutionPolicy Bypass -File <SKILL>\check.ps1`），`<SKILL>` 是本文件所在目录。
