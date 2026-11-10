@@ -2,6 +2,8 @@
 
 让 Claude Code、Codex 等 AI Agent 按固定风格帮你剪视频。每种剪辑风格是一个独立的技能，想用哪个装哪个。装好后**重启一次 Claude Code**，然后直接给它视频开剪：第一次用时它会自己检查并装好 ffmpeg、Python 环境和模型（约 5–15 分钟），不用你手动装依赖。
 
+**先看 [剪辑维度配置表](DIMENSIONS.md)**：它把一条剪辑拆成 13 个维度（排版、镜头、运镜、转场、字幕……），列出每个维度能改什么、怎么改。下面每个风格都是这张表里的一组取值，审片时也按维度定点修改。
+
 ## 包含哪些风格
 
 | 风格 | 插件名 | 适合什么视频 | 出什么 |
@@ -70,13 +72,14 @@ plugins/
       check.sh / install.sh            依赖自检 / 一键安装（Windows 是 .ps1）
       scripts/                         样板片的完整剪辑工程，新片照着改
       fonts/  examples/                字体 / 样板片的时间轴和截图
+DIMENSIONS.md                          剪辑维度配置表：所有风格和审片台的总表
 shared/                                各风格共用的代码和资源（待抽取）
 install.sh / install.ps1               非 Claude Code 的安装脚本：install.sh <插件名>
 ```
 
 三个风格的目录结构相同，都是 `plugins/<插件名>/skills/<插件名>/` 下放 SKILL.md、脚本和依赖脚本。
 
-加新风格：复制一个 `plugins/<风格>/` 目录，改 SKILL.md、plugin.json 和 check.sh 里要检查的依赖，在 marketplace.json 里加一行，README 的「包含哪些风格」表格和仓库结构各加一行。**每个风格都必须带 check + install，SKILL.md 第 0 步先自检、缺了由 Agent 自己装**，不能把装依赖留给用户。
+加新风格：复制一个 `plugins/<风格>/` 目录，改 SKILL.md、plugin.json 和 check.sh 里要检查的依赖，在 marketplace.json 里加一行，README 的「包含哪些风格」表格和仓库结构各加一行，DIMENSIONS.md 的「风格组合」表加一列。**每个风格都必须带 check + install，SKILL.md 第 0 步先自检、缺了由 Agent 自己装**，不能把装依赖留给用户。
 
 ## 版权
 
