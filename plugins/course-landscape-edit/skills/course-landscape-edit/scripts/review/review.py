@@ -7,6 +7,8 @@
       打印最新一份还没处理的修改单（Agent 读这个来改）。处理完运行 `done` 标记。
   python review.py done <工作目录>
       把最新修改单标记为已处理，下次 serve 版本号自动 +1。
+  python review.py launch <工作目录> [--port 8765]
+      给 Claude 桌面版写 <工作目录>/.claude/launch.json，让审片台在它的 Browser 侧栏里打开。
 
 现在支持：课程横版（工作目录里有 ed/segs.json）。口播和像素风的读法之后加。
 只用 Python 标准库和 ffmpeg/ffprobe，Mac 和 Windows 都能跑。
@@ -277,7 +279,10 @@ def serve(wd, video, style, port, open_it):
                 return self.send(200, json.dumps({"path": out}, ensure_ascii=False).encode())
             self.send(404, b"{}")
 
-    srv = ThreadingHTTPServer(("127.0.0.1", port), H)
+    for p in range(port, port + 20):  # 端口被上一版占着就往后找
+        try: srv = ThreadingHTTPServer(("127.0.0.1", p), H); break
+        except OSError: continue
+    else: raise SystemExit(f"{port}~{port+19} 端口都被占用了")
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     print(f"[审片台] {D['title']} {D['ver']}（{D['styleName']}）：{url}", flush=True)
     print("[审片台] 改完点「提交」，修改单会写进 review/；Ctrl+C 结束。", flush=True)
@@ -308,6 +313,19 @@ def done(wd):
     print(f"已标记处理完：{p}")
 
 
+def launch(wd, port):
+    """Claude 桌面版的 Browser 侧栏按 .claude/launch.json 起服务并打开。不带 --video，serve 会自己找最新成片。"""
+    d = os.path.join(os.path.abspath(wd), ".claude"); os.makedirs(d, exist_ok=True)
+    p = os.path.join(d, "launch.json")
+    j = jload(p) if os.path.exists(p) else {"version": "0.0.1", "configurations": []}
+    j["configurations"] = [c for c in j.get("configurations", []) if c.get("name") != "审片台"] + [{
+        "name": "审片台", "runtimeExecutable": sys.executable,
+        "runtimeArgs": [os.path.abspath(__file__), "serve", os.path.abspath(wd), "--no-open", "--port", str(port)],
+        "port": port}]
+    json.dump(j, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    print(f"已写入 {p}：在 Claude 桌面版里打开预览「审片台」即可。")
+
+
 def detect(wd):
     for k, (_, ok) in STYLES.items():
         if ok(wd): return k
@@ -316,10 +334,11 @@ def detect(wd):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if len(a) < 2 or a[0] not in ("serve", "changes", "done"): raise SystemExit(__doc__)
+    if len(a) < 2 or a[0] not in ("serve", "changes", "done", "launch"): raise SystemExit(__doc__)
     cmd, wd = a[0], a[1]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d
     if cmd == "serve":
         serve(wd, opt("--video"), opt("--style") or detect(wd), int(opt("--port", 8765)), "--no-open" not in a)
+    elif cmd == "launch": launch(wd, int(opt("--port", 8765)))
     elif cmd == "changes": changes(wd)
     else: done(wd)

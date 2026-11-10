@@ -272,10 +272,19 @@ segs.json 每段可写 `"trans"`，表示从上一段切进这一段的方式，
 1. **打开**：在后台运行（不要等它结束）
 
    ```
-   python <SKILL>/scripts/review/review.py serve <工作目录> --video <这一版成片.mp4>
+   python <SKILL>/scripts/review/review.py serve <工作目录> --video <这一版成片.mp4> --no-open
    ```
 
-   它会打印一个 `http://127.0.0.1:8765/` 地址并打开浏览器。Agent 有内置浏览器或侧边栏浏览器时，在那里打开这个地址；没有就让它弹系统浏览器。把地址也发给用户。
+   它会打印 `http://127.0.0.1:8765/`（端口被占就往后顺延，以打印的为准）。按你所在的 Agent 在侧边栏打开，打不开就去掉 `--no-open` 重跑，弹系统浏览器。地址同时发给用户。
+
+   | Agent | 怎么在侧边栏打开 |
+   |---|---|
+   | Claude 桌面版 | 先跑 `review.py launch <工作目录>` 写好 `.claude/launch.json`，再用预览工具启动「审片台」，它会在右侧 Browser 面板打开（不用自己跑 serve） |
+   | Codex 桌面版 | 用内置浏览器（`@Browser`）新开标签打开这个地址 |
+   | Cursor | 用内置浏览器工具打开这个地址；用户点聊天里的 localhost 链接也会在内置浏览器打开 |
+   | VS Code | 用浏览器工具打开，或让用户点链接（localhost 链接默认在集成浏览器打开），也可以命令面板 `Browser: Open Integrated Browser` |
+   | ZCode、Kimi Work 等没有内置浏览器的 | 去掉 `--no-open`，弹系统浏览器 |
+
 2. **等用户说改好了**，然后读修改单：`python <SKILL>/scripts/review/review.py changes <工作目录>`。每条有时间点、元素、出处（`source`）、改了哪个属性（从 → 到）和一句话。
 3. **按出处改工程文件**：
 
