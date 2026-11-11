@@ -358,6 +358,29 @@ def tline(t):  # 标题里的换行在输入框里写成 " / "
     return t.replace("\n", " / ")
 
 
+SLOT_NAME = {"portrait": "人像", "content": "素材", "title": "标题", "subtitle": "字幕"}
+
+
+def layer_boxes(tid, override):
+    """镜头模板里能在画面上拖的块：矩形 / 圆（box）和文字（anchor）。值都是画布比例，字段名 L<图层序号>。"""
+    t = lib_load("templates/shots", tid) or {}
+    out = []
+    for i, L in enumerate(t.get("layers", [])):
+        L = dict(L, **override.get(str(i), {}))
+        nm = SLOT_NAME.get(L["slot"])
+        if not nm: continue
+        if L.get("key"): nm += f"（{L['key']}）"
+        if L.get("box") and L.get("shape") != "polygon":
+            b = L["box"]; circle = b[3] is None
+            out.append({"k": f"L{i}", "label": nm + "位置", "type": "box", "shape": "circle" if circle else "box",
+                        "v": ",".join(str(round(x, 3)) for x in (b[:3] if circle else b))})
+        elif L.get("anchor"):
+            out.append({"k": f"L{i}", "label": nm + "位置", "type": "box", "shape": "point", "align": L.get("align", "center"),
+                        "pw": 0.5 if L["slot"] == "title" else 0.8, "ph": 0.06 if L["slot"] == "title" else 0.045,
+                        "v": ",".join(str(round(x, 3)) for x in L["anchor"])})
+    return out
+
+
 def tmpl(wd, dur):
     job = jload(job_path(wd)); P = job_plan(wd); sty, lib, seq = job_lib(job)
     W, H = P["canvas"]
@@ -382,6 +405,7 @@ def tmpl(wd, dur):
             f.append({"k": "cues", "label": "占几句", "type": "range", "min": 1, "max": len(cues), "step": 1, "v": max(1, n)})
         else:
             f.append({"k": "len", "label": "长度", "type": "ro", "v": "到结尾"})
+        f += layer_boxes(s["template"], spec.get("layer_override", {}))
         segs = s.get("segments", [])
         if content and len(segs) == 1:  # 一个镜头一段素材：能换素材、调取景
             ci = cidx.get(segs[0]["content"])
@@ -471,7 +495,17 @@ def tmpl_apply(wd):
             if m.group(2):
                 if "kind" in st: sh_["transition"] = TR_KEY[st["kind"]]
             else:
-                if "layout" in st: sh_["template"] = names[st["layout"]]
+                if "layout" in st:
+                    sh_["template"] = names[st["layout"]]; sh_.pop("layer_override", None)  # 换了版式，旧的拖框作废
+                else:
+                    tl = (lib_load("templates/shots", sh_["template"]) or {}).get("layers", [])
+                    for k2, v2 in st.items():
+                        mm = re.match(r"L(\d+)$", k2)
+                        if not mm or int(mm.group(1)) >= len(tl): continue
+                        nums = [float(x) for x in str(v2).split(",")]
+                        L0 = tl[int(mm.group(1))]
+                        o = {"anchor": nums[:2]} if "anchor" in L0 and not L0.get("box") else {"box": nums + [None] if len(nums) == 3 else nums}
+                        sh_.setdefault("layer_override", {})[mm.group(1)] = o
                 if "cues" in st: sh_["cues"] = int(st["cues"])
                 if "beats" in st: sh_["beats"] = float(st["beats"])
                 if "cut_every" in st:

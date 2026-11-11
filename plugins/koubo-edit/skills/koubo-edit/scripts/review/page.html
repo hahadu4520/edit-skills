@@ -78,7 +78,7 @@ kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px;
 textarea{width:100%;min-height:54px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--bg);color:var(--fg)}
 .pick{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .pick button{text-align:left;display:flex;gap:8px;align-items:center}.pick i{width:8px;height:8px;border-radius:2px;flex:none}
-.acts{display:flex;gap:8px;margin-top:10px}
+.acts{display:flex;gap:8px;margin-top:10px}.others{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.oth{font-size:12px;padding:2px 8px}
 /* 修改单抽屉 */
 #scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
 #drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--card);border-left:1px solid var(--line);z-index:31;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,.15);padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px)}
@@ -134,7 +134,7 @@ if(D.notes){$('#notes').hidden=false;$('#notes').textContent=D.notes}
 $('#hist').innerHTML=(D.history||[]).map(h=>`<details><summary>${esc(h.from)} → ${esc(h.to)} · ${h.n} 处</summary><div class="hint">${esc(h.summary)}</div></details>`).join('')||'<div class="hint">这是第一版</div>';
 const cvs=$('#layc');cvs.width=D.W;cvs.height=D.H;
 const recOf=id=>R.find(r=>r.el===id);
-const val=(e,k)=>{const f=e.f.find(f=>f.k===k);if(f.g){const r=R.find(r=>r.el&&r.el.startsWith(e.track+'-')&&r.ch[k]);return r?r.ch[k][1]:f.v}const r=recOf(e.id);return r&&r.ch[k]?r.ch[k][1]:f.v};
+const val=(e,k)=>{const f=e.f.find(f=>f.k===k);if(f.g){const r=R.find(r=>r.el&&r.el.startsWith(e.track+'-')&&r.ch[k]);return r?r.ch[k][1]:f.v}const r=[...R].reverse().find(r=>r.el===e.id&&r.ch[k]);return r?r.ch[k][1]:f.v};
 const label=e=>e.track==='sub'?val(e,'text'):e.track==='chap'?val(e,'name'):e.name;
 
 const labels=$('#labels'),inner=$('#inner');
@@ -165,14 +165,15 @@ function subPreview(){const o=$('#subov'),s=EL.find(e=>e.track==='sub'&&v.curren
 if(!s){o.style.display='none';return}const r=D.subRect;Object.assign(o.style,{display:'flex',left:r[0]*100+'%',top:r[1]*100+'%',width:r[2]*100+'%',height:r[3]*100+'%'});o.textContent=val(s,'text')}
 
 // 改动记进修改单
-function setCh(e,k,nv,t){let r=recOf(e.id);const ov=e.f.find(f=>f.k===k).v;
-if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:t??Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)),el:e.id,ch:{},text:''};R.push(r)}
+// 一个元素可以有好几条修改（不同时间点各记一条）；同一个属性只留在最新那条里
+function setCh(e,k,nv,t){const r=recFor(e,t);const ov=e.f.find(f=>f.k===k).v;
+R.forEach(x=>{if(x!==r&&x.el===e.id)delete x.ch[k]});
 if(String(nv)===String(ov))delete r.ch[k];else r.ch[k]=[ov,nv];return r}
 function cleanup(){R=R.filter(r=>!r.el||Object.keys(r.ch).length||r.text||r===selRec)}
 
 // 元素卡片
-function openEl(e,anchor,seek,rec){if(e.track==='sub')return inlineSub(e,rec);selEl=e;selRec=rec||recOf(e.id)||null;if(seek){v.pause();v.currentTime=Math.max(e.t0+0.05,Math.min(e.t1-0.05,v.currentTime>=e.t0&&v.currentTime<e.t1?v.currentTime:e.t0+0.05))}
-build();const pop=$('#pop'),r0=recOf(e.id);
+function openEl(e,anchor,seek,rec){if(e.track==='sub')return inlineSub(e,rec);selEl=e;selRec=rec||null;if(seek){v.pause();v.currentTime=Math.max(e.t0+0.05,Math.min(e.t1-0.05,v.currentTime>=e.t0&&v.currentTime<e.t1?v.currentTime:e.t0+0.05))}
+build();const pop=$('#pop'),r0=selRec,others=R.filter(x=>x.el===e.id&&x!==selRec);
 const field=f=>{const cur=val(e,f.k),chg=r0&&r0.ch[f.k];let w='';
 if(f.type==='seg')w=`<div class="seg" data-k="${f.k}">${f.opts.map(o=>`<button type="button" data-v="${esc(o.v)}" class="${String(cur)===String(o.v)?'on':''}" ${o.off?'disabled title="'+esc(o.off)+'"':''}>${esc(o.v)}${o.tag?' '+o.tag:''}</button>`).join('')}</div>`;
 else if(f.type==='select')w=`<select data-k="${f.k}" id="f_${f.k}">${f.opts.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
@@ -183,12 +184,14 @@ return`<div class="f ${chg?'chg':''}"><label for="f_${f.k}">${esc(f.label)}</lab
 const editable=e.f.filter(f=>f.type!=='ro'&&f.type!=='box'&&!f.g),ro=e.f.filter(f=>f.type==='ro');
 const live=canPrev(e)&&editable.length;
 pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><h3>${esc(label(e))} <span class="hint">${fmt(e.t0)}–${fmt(e.t1)}</span></h3>
-${ro.map(field).join('')}${editable.map(field).join('')}${e.track==='shot'&&D.layout?'<div class="hint">拖画面上的框，改位置和大小</div>':''}${e.track==='chap'?'<div class="hint">进度条样式在「本集设置」里改</div>':''}
-<div class="sec"><span>一句话改</span></div>
+${ro.map(field).join('')}${editable.map(field).join('')}${e.track==='shot'&&(D.layout||e.f.some(f=>f.shape))?'<div class="hint">拖画面上的框改位置，拖右下角改大小</div>':''}${e.track==='chap'?'<div class="hint">进度条样式在「本集设置」里改</div>':''}
+${others.length?`<div class="others"><span class="hint">这里已经记了：</span>${others.map(x=>`<button type="button" class="oth" data-r="${x.id}">#${x.id} ${fmt(x.t)} ${esc((x.text||Object.keys(x.ch).map(k=>(e.f.find(f=>f.k===k)||{}).label||k).join('、')).slice(0,14))}</button>`).join('')}</div>`:''}
+<div class="sec"><span>一句话改${r0?` · 第 ${r0.id} 条`:''} · ${fmt(r0?r0.t:Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)))}</span></div>
 <textarea id="ai" placeholder="${esc(e.ph||'')}">${esc(r0?r0.text:'')}</textarea>
-<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':editable.length&&!live?'出片后看效果':live?'改了马上能看':''}</span><button id="undo" ${r0?'':'hidden'}>撤销</button></div>`;
-pop.hidden=false;place(pop,$('#b_'+e.id)||anchor);if(e.track==='shot'&&D.layout)showLay(e);else $('#lay').hidden=true;
+<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':editable.length&&!live?'出片后看效果':live?'改了马上能看':''}</span><button id="undo" ${r0?'':'hidden'}>撤销</button><button id="ok" class="pri">确认</button></div>`;
+pop.hidden=false;place(pop,$('#b_'+e.id)||anchor);if(e.track==='shot'&&D.layout)showLay(e);else if(e.track==='shot'&&e.f.some(f=>f.shape))showFree(e);else $('#lay').hidden=true;
 pop.querySelector('.x').onclick=closePop;
+pop.querySelectorAll('.oth').forEach(b=>b.onclick=()=>{const x=R.find(y=>y.id===+b.dataset.r);if(x)openRec(x,true)});
 pop.querySelectorAll('.seg').forEach(g=>g.onclick=ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));stage(g.dataset.k,b.dataset.v)});
 pop.querySelectorAll('select,input[type=text]').forEach(i=>i.oninput=()=>stage(i.dataset.k,i.value));
 pop.querySelectorAll('input[type=range]').forEach(i=>{i.oninput=()=>{i.nextElementSibling.textContent=i.value+(e.f.find(f=>f.k===i.dataset.k).unit||'')};i.onchange=()=>stage(i.dataset.k,+i.value)});
@@ -196,9 +199,11 @@ pop.querySelectorAll('input,textarea,select').forEach(i=>i.addEventListener('key
 // 一改就记、马上预览
 function stage(k,nv){const f=e.f.find(f=>f.k===k);if(f.g)R.forEach(r=>{if(r.el&&r.el.startsWith(e.track+'-')&&r.el!==e.id)delete r.ch[k]});
 const r=recFor(e);setCh(e,k,nv,r.t);if(k==='layout'&&D.layout){['cbox','pbox','sbox'].forEach(x=>delete r.ch[x]);showLay(e)}pop.querySelector(`[data-k="${k}"]`).closest('.f').classList.toggle('chg',!!r.ch[k]);done();if(canPrev(e))preview(e)}
-function done(){const r=recOf(e.id),has=r&&(Object.keys(r.ch).length||r.text);$('#st').textContent=has?'已记入修改单':'';$('#undo').hidden=!has;render()}
+function done(){const r=selRec,has=r&&(Object.keys(r.ch).length||r.text);$('#st').textContent=has?'已记入修改单':'';$('#undo').hidden=!has;render()}
+$('#ok').onclick=()=>confirmPop(()=>{const tx=$('#ai').value.trim();if(tx)recFor(e).text=tx;else if(selRec)selRec.text='';return selRec});
+$('#ai').addEventListener('keydown',ev=>{if(ev.key==='Enter'&&(ev.metaKey||ev.ctrlKey)){ev.preventDefault();$('#ok').click()}});
 $('#ai').oninput=()=>{const r=recFor(e);r.text=$('#ai').value.trim();$('#cnt').textContent=R.length;$('#st').textContent=r.text||Object.keys(r.ch).length?'已记入修改单':''};$('#ai').onchange=done;
-$('#undo').onclick=()=>{R=R.filter(x=>x.el!==e.id);selRec=null;render();openEl(e,null,false);if(canPrev(e))preview(e);drawLay()}}
+$('#undo').onclick=()=>{R=R.filter(x=>x!==selRec);selRec=null;render();openEl(e,null,false);if(canPrev(e))preview(e);drawLay()}}
 const canPrev=e=>['chap','sub'].includes(e.track)||(e.track==='shot'&&!!D.layout);
 // 镜头布局：版式 + 拖框；预览用视频帧重新拼
 const LY=D.layout||{src:{},presets:{},top:0},SRC=LY.src,PRE=LY.presets;
@@ -217,6 +222,16 @@ const h=w*asp,m=W*.025;x=Math.max(m,Math.min(W-m-w,x));y=Math.max(LY.top,Math.mi
 tmp[k]=cur;overlays()};
 b.onpointerup=()=>{b.onpointermove=b.onpointerup=null;tmp={};if(cur==null)return;const r=recFor(e),nv=Array.isArray(cur)?cur.map(x=>Math.round(x)).join(','):String(Math.round(cur));
 setCh(e,{c:'cbox',p:'pbox',s:'sbox'}[k],nv,r.t);render();showLay(e);overlays();const st=$('#st');if(st){st.textContent='已记入修改单';$('#undo').hidden=false}}})}
+// 版式模板的镜头：每个块（人像、素材、标题、字幕）一个框，直接拖；值是画布比例
+function showFree(e){const o=$('#lay');o.hidden=false;const bx=e.f.filter(f=>f.type==='box'&&f.shape),A=D.W/D.H;
+const geo=(f,r)=>{if(f.shape==='point'){const w=f.pw,h=f.ph;return[r[0]-(f.align==='left'?0:f.align==='right'?w:w/2),r[1]-h/2,w,h]}return[r[0],r[1],r[2],f.shape==='circle'?r[2]*A:r[3]]};
+o.innerHTML=bx.map(f=>{const g=geo(f,String(val(e,f.k)).split(',').map(Number));return`<div class="lb" data-k="${f.k}" style="left:${g[0]*100}%;top:${g[1]*100}%;width:${g[2]*100}%;height:${g[3]*100}%${f.shape==='circle'?';border-radius:50%':''}"><span>${esc(f.label.replace('位置',''))}</span>${f.shape!=='point'?'<i class="rz"></i>':''}</div>`}).join('');
+o.querySelectorAll('.lb').forEach(b=>b.onpointerdown=ev=>{ev.preventDefault();ev.stopPropagation();v.pause();const f=bx.find(x=>x.k===b.dataset.k),rz=ev.target.classList.contains('rz'),st=$('#stage'),sw=st.clientWidth,shh=st.clientHeight,x0=ev.clientX,y0=ev.clientY,r0=String(val(e,f.k)).split(',').map(Number);let cur=null;b.setPointerCapture(ev.pointerId);
+b.onpointermove=m=>{const dx=(m.clientX-x0)/sw,dy=(m.clientY-y0)/shh;
+if(rz){const w=Math.max(.05,Math.min(1.2,r0[2]+dx));cur=f.shape==='circle'?[r0[0],r0[1],w]:[r0[0],r0[1],w,Math.max(.03,Math.min(1.2,r0[3]+dy))]}
+else cur=r0.map((x,i)=>i===0?x+dx:i===1?x+dy:x);
+const g=geo(f,cur);Object.assign(b.style,{left:g[0]*100+'%',top:g[1]*100+'%',width:g[2]*100+'%',height:g[3]*100+'%'})};
+b.onpointerup=()=>{b.onpointermove=b.onpointerup=null;if(!cur)return;const r=recFor(e);setCh(e,f.k,cur.map(x=>Math.round(x*1000)/1000).join(','),r.t);render();showFree(e);const s2=$('#st');if(s2){s2.textContent='已记入修改单';$('#undo').hidden=false}}})}
 function drawLay(){if(!D.layout)return false;const cv=$('#layc'),t=v.currentTime,sh=EL.find(e=>e.track==='shot'&&t>=e.t0&&t<e.t1),r=sh&&recOf(sh.id),
 on=!!sh&&(!!(r&&['layout','cbox','pbox','sbox'].some(k=>r.ch[k]))||(selEl===sh&&Object.keys(tmp).length>0));cv.style.display=on?'block':'none';if(!on)return false;
 const g=cv.getContext('2d'),L=lay(sh),W=D.W,H=D.H;g.fillStyle=D.bg;g.fillRect(0,0,W,H);g.drawImage(v,0,0,W,LY.top,0,0,W,LY.top);
@@ -231,19 +246,21 @@ grp=(lv,h)=>{const a=F.filter(f=>(f.lv||'本集')===lv);return a.length?`<div cl
 pop.innerHTML=`<button class="x" aria-label="关闭">✕</button><h3>本集设置 <span class="hint">${esc(D.styleName)}</span></h3>
 ${grp('本集','本集')}${grp('系列','系列 · 同系列每集都用')}
 <div class="sec"><span>一句话改</span></div><textarea id="epai" placeholder="${esc(D.epHint||'')}">${esc(r0?r0.text:'')}</textarea>
-<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':''}</span></div>`;
+<div class="acts" style="align-items:center"><span class="hint" id="st" style="flex:1">${r0?'已记入修改单':''}</span><button id="ok" class="pri">确认</button></div>`;
 pop.hidden=false;place(pop,$('#epbtn'));pop.querySelector('.x').onclick=closePop;
 const rec=()=>{let r=recOf('ep');if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:0,el:'ep',ch:{},text:''};R.push(r)}return r};
 const put=(k,nv)=>{rec();setCh(EP,k,nv,0);const f=pop.querySelector(`[data-k="${k}"]`);f&&f.closest('.f').classList.toggle('chg',!!(recOf('ep')&&recOf('ep').ch[k]));cleanup();render();$('#st').textContent='已记入修改单';v.pause();overlays()};
 pop.querySelectorAll('.seg').forEach(g=>g.onclick=ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));put(g.dataset.k,b.dataset.v)});
 pop.querySelectorAll('input[type=text]').forEach(i=>{i.onchange=()=>put(i.dataset.k,i.value.trim())});
+pop.querySelectorAll('input[type=text]').forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter')i.blur()}));
+$('#ok').onclick=()=>{pop.querySelectorAll('input[type=text]').forEach(i=>{if(i.value.trim()!==String(val(EP,i.dataset.k)))put(i.dataset.k,i.value.trim())});const tx=$('#epai').value.trim();if(tx||recOf('ep'))rec().text=tx;confirmPop(()=>recOf('ep'))};
 $('#epai').onchange=()=>{const tx=$('#epai').value.trim();if(!recOf('ep')&&!tx)return;rec().text=tx;cleanup();render()};
 pop.querySelectorAll('input,textarea').forEach(i=>i.addEventListener('keydown',ev=>ev.stopPropagation()))}
 $('#epbtn').onclick=e=>{e.stopPropagation();openEp()};
-function recFor(e){let r=recOf(e.id);const m=selRec&&!selRec.el?selRec:null;
-if(m){m.el=e.id;if(r&&r!==m){R=R.filter(x=>x!==r);Object.assign(m.ch,r.ch);m.text=m.text||r.text}r=m}
-if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)),el:e.id,ch:{},text:''};R.push(r)}
-selRec=r;return r}
+function recFor(e,t){let r=selRec&&(selRec.el===e.id||!selRec.el)?selRec:null;
+if(r)r.el=e.id;else if(e.track==='sub'||e.id==='ep')r=recOf(e.id);
+if(!r){r={id:R.reduce((m,x)=>Math.max(m,x.id),0)+1,t:t??Math.max(e.t0,Math.min(e.t1-0.1,v.currentTime)),el:e.id,ch:{},text:''};R.push(r);R.sort((a,b)=>a.t-b.t)}
+if(e.id!=='ep')selRec=r;return r}
 // 预览：浏览器里先画出来，出片以剪辑结果为准
 let pv=null;function preview(e){const a=e.track==='chap'?Math.max(0,v.currentTime-0.01):Math.max(0,e.t0-0.4);pv={end:e.track==='chap'?a+2:e.t1};v.currentTime=a;v.play()}
 function overlays(){const t=v.currentTime;let pvOn=drawLay();
@@ -283,13 +300,17 @@ pop.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{r.text=$('#ai0').
 $('#sv0').onclick=()=>{r.text=$('#ai0').value.trim();closePop();render()};$('#del0').onclick=()=>{R=R.filter(x=>x!==r);closePop();render()}}
 function place(pop,anchor){const a=anchor.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
 let x=Math.min(innerWidth-w-16,Math.max(16,a.left+Math.min(a.width,200)/2-w/2)),y=a.bottom+8;if(y+h>innerHeight-8)y=Math.max(8,a.top-h-8);Object.assign(pop.style,{left:x+'px',top:y+'px'})}
+// 弹窗「确认」：把这一处记进修改单、关掉弹窗，顶上提示一下记成了第几条
+function confirmPop(get){const r=get();cleanup();render();const has=r&&R.includes(r)&&(Object.keys(r.ch).length||r.text);closePop();
+$('#saved').textContent=has?`已记入修改单第 ${r.id} 条`:'没有改动';if(has){const tb=$('#open');tb.animate&&tb.animate([{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:450})}}
 function closePop(){if($('#pop').hidden)return;$('#pop').hidden=true;$('#lay').hidden=true;tmp={};selEl=null;selRec=null;cleanup();build()}
 document.addEventListener('pointerdown',e=>{const p=$('#pop');if(!p.hidden&&!p.contains(e.target)&&!e.target.closest('.blk,.mark'))closePop()});
 
 function desc(r){const e=r.el&&byId(r.el);if(!e)return'';const fl=k=>e.f.find(f=>f.k===k).label;
 const ch=Object.entries(r.ch).filter(([k])=>k!=='t0'&&k!=='t1');if(r.ch.t0||r.ch.t1){const o=[e.f.find(f=>f.k==='t0').v,e.f.find(f=>f.k==='t1').v],n=[val(e,'t0'),val(e,'t1')];ch.push(['时间',[o[0]+'–'+o[1]+'s',n[0]+'–'+n[1]+'s']])}
 const bx=(k,x)=>k==='sbox'?'高 '+x:(([X,Y,W])=>`x${X} y${Y} 宽${W}`)(String(x).split(','));ch.forEach(c=>{if(c[0].endsWith('box'))c[1]=[bx(c[0],c[1][0]),bx(c[0],c[1][1])]});
-return ch.map(([k,[a,b]])=>k==='时间'?`时间 <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:k==='text'?`<del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:`${esc(fl(k))} <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`).join('<br>')}
+return ch.map(([k,[a,b]])=>{const fd=e.f.find(f=>f.k===k);if(fd&&fd.shape){const A=String(a).split(',').map(Number),B=String(b).split(',').map(Number),dx=Math.round((B[0]-A[0])*100),dy=Math.round((B[1]-A[1])*100),ds=A[2]&&B[2]&&A[2]!==B[2]?Math.round((B[2]/A[2]-1)*100):0;
+return `${esc(fd.label)} <ins>${[dx?(dx>0?'右移 ':'左移 ')+Math.abs(dx)+'%':'',dy?(dy>0?'下移 ':'上移 ')+Math.abs(dy)+'%':'',ds?(ds>0?'放大 ':'缩小 ')+Math.abs(ds)+'%':''].filter(Boolean).join('，')||'微调'}</ins>`}return k==='时间'?`时间 <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:k==='text'?`<del>${esc(a)}</del> → <ins>${esc(b)}</ins>`:`${esc(fl(k))} <del>${esc(a)}</del> → <ins>${esc(b)}</ins>`}).join('<br>')}
 function render(){R.sort((a,b)=>a.t-b.t);$('#cnt').textContent=R.length;
 $('#items').innerHTML=R.map(r=>{const e=r.el&&byId(r.el);return`<div class="row2" data-r="${r.id}"><span class="n">${r.id}</span><div><div class="m">${fmt(r.t)} · ${r.ep?'本集设置':e?esc(TN[e.track]+'：'+label(e)):'未选元素'}</div><div class="txt">${desc(r)}${r.text?`${Object.keys(r.ch).length?'<br>':''}<span class="ai">AI</span>${esc(r.text)}`:''}${!Object.keys(r.ch).length&&!r.text?'<span class="hint">待补充</span>':''}</div></div></div>`}).join('')||'<div class="hint">还没有修改</div>';
 document.querySelectorAll('#items [data-r]').forEach(d=>d.onclick=()=>{closeDrawer();openRec(R.find(r=>r.id==d.dataset.r),true)});

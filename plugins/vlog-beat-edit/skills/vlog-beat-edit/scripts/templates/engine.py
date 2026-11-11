@@ -527,6 +527,11 @@ class Renderer:
                 ci = min(ci + n, len(cues))
                 t1 = cues[ci][0] if ci < len(cues) else end_all
             tpl = load("shot", s["template"])
+            if s.get("layer_override"):  # 审片台里拖过的框：按图层序号改 box / anchor，只影响这一集这个镜头
+                tpl = json.loads(json.dumps(tpl))
+                for i, o in s["layer_override"].items():
+                    if int(i) < len(tpl["layers"]):
+                        tpl["layers"][int(i)].update(o)
             sh = dict(s, t0=t0, t1=t1, tpl=tpl, bg=s.get("background", tpl.get("background", {"type": "paper"})))
             # 按拍换素材：cut_every 是几拍换一次（0.5 = 半拍）。切点就是节拍表上的拍点
             ce = s.get("cut_every")
