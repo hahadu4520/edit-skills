@@ -61,15 +61,6 @@ python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdi
 4. **先出关键帧给用户看**，确认后再 render。render 只出开头这一段（带原声），接回正片用 ffmpeg concat，或者把开头时长从粗剪里去掉再拼。
 5. 这些模板现在都是 △：只用在开头小样里，用户看过、说可以，才能用到正片其他位置。
 
-### vlog 卡点开头（△ 待试）
-
-用户要 vlog 开头（ins 感快切、衬线英文标题、卡点）时，风格用 `vlog`，片段模板 `opening-vlog-beat` 或 `opening-vlog-behind`。按配乐拍数排镜头，不按字幕。
-
-1. **配乐**：用户有指定的歌，用 `python <SKILL>/scripts/templates/beats.py <歌> --start <从哪秒开始> --dur 15` 测节拍表；没有就 `python <SKILL>/scripts/templates/beatgen.py house <workdir>/music.wav` 合成一段（house 快节奏 / lofi 日常慢 / pop 明亮），告诉用户这是合成的，音色比较基础。
-2. **素材**：第 0 段是钩子（有表情的人、反差大的画面），后面 8–16 段快切素材（第一人称手持、生活小物、局部特写），最后一段是收尾（人物自拍或回头）。不够就问用户要，不要用别人的视频。
-3. **文字**：`title` 是一个英文词（地名或主题），`note` 是斜体小注（日期、by 谁），`sub` 是小写副标，`tag_l` `tag_r` 是角标；`big` 只给字在人后用，通常是 VLOG。
-4. 先 still 出几帧看，再 render。成片带配乐，-14 LUFS。
-
 ## 审片和修改（审片台）
 
 每出一版（小样或全片），都用审片台让用户看片、改：用户在网页里边看边标「这里要改」，点元素直接改属性或写一句话，最后点「提交」生成修改单。

@@ -8,6 +8,8 @@
   python engine.py still  <job.json> <秒> <out.jpg>     只出一帧，先看效果
   python engine.py wire   <模板id> <out.jpg> [风格id]    出一张模板线框图（不需要素材）
   python engine.py list                                   列出所有模板
+  python engine.py plan   <job.json> [out.json]           只算时间轴不出画面：每个镜头的起止、切点、用哪段素材、文字、拍点。
+                                                          审片台读这个画轨道，所有模板任务（口播开头、vlog 卡点）都是同一个格式
 
 job.json 见 templates/README.md「任务文件」一节。
 配乐卡点（维度 14）：job 里给 music（配乐 + 节拍表），片段模板里的镜头就能按「几拍」排、按拍换素材，
@@ -545,6 +547,42 @@ class Renderer:
             shots.append(sh)
         return shots
 
+    def timeline(self):
+        """时间轴（给审片台）：镜头 / 切点 / 文字 / 拍点，时间都是成片里的秒数。"""
+        N = len(self.contents)
+        out = {"job_version": 1, "style": self.S.d["id"], "sequence": self.job.get("sequence"),
+               "duration": round(self.shots[-1]["t1"], 3), "canvas": [self.S.W, self.S.H], "shots": []}
+        for k, sh in enumerate(self.shots):
+            segs = []
+            if sh.get("cuts"):
+                for j, (a, _) in enumerate(sh["cuts"]):
+                    b = sh["cuts"][j + 1][0] if j + 1 < len(sh["cuts"]) else sh["t1"]
+                    c = self.cut_at(sh, a + 1e-4)[0]
+                    segs.append({"t0": round(a, 3), "t1": round(b, 3), "content": self.job["content"][self.contents.index(c)]["src"]})
+            elif N and (sh["tpl"].get("background", {}).get("type") == "content" or any(L["slot"] == "content" for L in sh["tpl"]["layers"])):
+                c = self.content_of(sh)
+                segs.append({"t0": round(sh["t0"], 3), "t1": round(sh["t1"], 3), "content": self.job["content"][self.contents.index(c)]["src"]})
+            texts = {}
+            for L in sh["tpl"]["layers"]:
+                if L["slot"] == "title":
+                    tx = self.title_text(sh, L)
+                    if tx:
+                        texts[L.get("key") or sh.get("title") or "title"] = tx
+            out["shots"].append({"index": k, "template": sh["template"], "t0": round(sh["t0"], 3), "t1": round(sh["t1"], 3),
+                                 "beats": sh.get("beats"), "cut_every": sh.get("cut_every"), "segments": segs, "texts": texts})
+        if self.beats:
+            d = out["duration"]
+            bs, k = [], 0
+            while self.beats.at(k) <= d + 1e-6:
+                if self.beats.at(k) >= -1e-6:
+                    bs.append(round(self.beats.at(k), 3))
+                k += 1
+            out["music"] = {"src": self.music["src"], "bpm": self.beats.bpm, "offset": round(self.beats.offset, 3),
+                            "beats": bs, "drop": round(self.beats.d.get("drop", 0) - self.beats.offset, 3)}
+        if self.cues:
+            out["cues"] = self.cues
+        return out
+
     def beat_len(self):
         return self.beats.len if self.beats else 0.5
 
@@ -563,9 +601,10 @@ class Renderer:
         b = cuts[j + 1][0] if j + 1 < len(cuts) else shot["t1"]
         N = len(self.contents)
         c0 = min(getattr(self, "_cyc0", 0) or 0, N - 1)
-        if ci >= N:  # 素材不够轮：在快切那一段素材里循环，不再轮回钩子镜头
-            ci = c0 + (ci - c0) % max(1, N - c0)
-        return self.contents[ci % N], t - a, b - a
+        # 快切只在「快切素材」里轮：跳过镜头里点名用的那几段（钩子、收尾、字在人后），不够就循环
+        fixed = {sh["content"] % N for sh in self.shots if isinstance(sh.get("content"), int) and not sh.get("cuts")}
+        pool = [i for i in range(c0, N) if i not in fixed] or list(range(N))
+        return self.contents[pool[(ci - c0) % len(pool)]], t - a, b - a
 
     def title_text(self, shot, L=None):
         k = (L or {}).get("key") or shot.get("title")
@@ -1003,6 +1042,13 @@ def main():
     jp = sys.argv[2]
     job = json.load(open(jp, encoding="utf-8"))
     R = Renderer(job, os.path.dirname(os.path.abspath(jp)))
+    if cmd == "plan":
+        tl = json.dumps(R.timeline(), ensure_ascii=False, indent=1)
+        if len(sys.argv) > 3:
+            open(sys.argv[3], "w", encoding="utf-8").write(tl)
+        else:
+            print(tl)
+        return
     if cmd == "render":
         R.render(sys.argv[3])
     elif cmd == "still":

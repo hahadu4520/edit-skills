@@ -1,0 +1,8 @@
+{
+  "name": "vlog-beat-edit",
+  "description": "vlog 卡点剪辑：按配乐拍子剪 ins 感 vlog 开头。钩子停在前奏，落点进鼓后每半拍硬切，细衬线英文大标题压住画面，可做字在人后；配乐可现场合成（免版权）或用现成的歌测节拍。",
+  "version": "0.1.0",
+  "author": {
+    "name": "hahadu"
+  }
+}

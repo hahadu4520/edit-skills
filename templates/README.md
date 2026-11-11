@@ -26,7 +26,7 @@
 | <img src="shots/dashed-cutout.jpg" width="90"> | `dashed-cutout` | 虚线抠像 | 全屏内容 + 抠像 | 人像、素材、抠像 | △ |
 | <img src="shots/full-portrait.jpg" width="90"> | `full-portrait` | 全屏人像 | 全屏人像 | 人像 | ✓ |
 
-ins 感 vlog（`styles/vlog.json`）的镜头模板。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 衬线标题）。
+ins 感 vlog（`styles/vlog.json`，技能是 `vlog-beat-edit`）的镜头模板。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 衬线标题）。
 
 | 线框 | id | 名字 | 版式类 | 要什么 | 状态 |
 | --- | --- | --- | --- | --- | --- |
