@@ -298,7 +298,14 @@ def job_path(wd):
 
 def job_plan(wd):
     """engine.py plan 的时间轴（镜头、切点、文字、拍点），口播开头和 vlog 卡点同一个格式。"""
-    return json.loads(sh(sys.executable, ENGINE, "plan", job_path(wd)))
+    jp = job_path(wd); cache = os.path.splitext(jp)[0] + ".plan.json"
+    # 有比任务文件新的时间轴就直接用（engine plan 要读视频、跑人脸，机器上没装 opencv / mediapipe 也能打开审片台）
+    if os.path.exists(cache) and os.path.getmtime(cache) >= os.path.getmtime(jp):
+        return jload(cache)
+    out = sh(sys.executable, ENGINE, "plan", jp)
+    try: open(cache, "w", encoding="utf-8").write(out)
+    except OSError: pass
+    return json.loads(out)
 
 
 # 模板库：插件里在 scripts/templates/library，仓库里在仓库根目录
