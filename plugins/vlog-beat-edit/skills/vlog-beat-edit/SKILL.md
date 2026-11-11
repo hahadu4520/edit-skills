@@ -1,6 +1,6 @@
 ---
 name: vlog-beat-edit
-description: 「vlog 卡点剪辑」按配乐拍子剪 ins 感 vlog 开头：钩子镜头停在前奏，落点进鼓后素材每半拍硬切，细衬线英文大标题（可压在人身后）收住，暖调加胶片颗粒。配乐可以现场合成（免版权）或用现成的歌测节拍。当用户说“vlog 卡点”“vlog 开头”“ins 感快剪”“卡点剪辑”“按音乐节奏剪”“给素材配卡点音乐”，或给出一组旅行、日常的手机素材要剪开头时使用。
+description: 「vlog 卡点剪辑」按配乐拍子剪 ins 感 vlog 开头：钩子镜头停在前奏，落点进鼓后素材每半拍硬切，细衬线英文大标题（可压在人身后）收住，保留原片色调。配乐可以现场合成（免版权）或用现成的歌测节拍。当用户说“vlog 卡点”“vlog 开头”“ins 感快剪”“卡点剪辑”“按音乐节奏剪”“给素材配卡点音乐”，或给出一组旅行、日常的手机素材要剪开头时使用。
 ---
 
 # vlog 卡点剪辑
@@ -26,7 +26,7 @@ description: 「vlog 卡点剪辑」按配乐拍子剪 ins 感 vlog 开头：钩
 2. **落点进鼓，每半拍硬切**（约 0.25 秒一个镜头，8 拍 16 个）：第一人称手持、生活小物、局部特写。不加任何转场特效，全是硬切，切点压在拍上。
 3. **衬线大标题压住**：白色细衬线英文（地名或主题），右上一行斜体小注（日期、by 谁），左下一行小写副标。标题不动，底下继续每半拍换素材。
 4. **结尾重音**：最后一个镜头（人物自拍或回头）落在配乐的结尾重音上，停 4 拍。
-5. 画面左右各一行很细的角标（地点、账号）；整体暖调、黑位提一点、胶片颗粒。
+5. 画面左右各一行很细的角标（地点、账号）；不调色、不加颗粒，保留原片色调。
 
 ## 第 1 步：问清楚、收素材
 
@@ -69,7 +69,7 @@ python <SKILL>/scripts/templates/beats.py <歌.mp3> --start <从哪秒开始> --
 - `music.src` / `music.beats`：第 2 步的配乐和节拍表；`start: "auto"` 让快切第一刀正好落在鼓进来那一拍。
 - `content`：第 0 段钩子，`opening-vlog-behind` 的第 1 段是人站在中间的镜头，后面是快切素材，最后一段是收尾。每段可以写 `start`（从素材第几秒开始用）、`crop`（裁掉字幕水印）、`focus`（铺满时取景中心）。素材不够快切用，会在快切那几段里循环，不会轮回钩子。
 - `titles`：`title` 标题、`note` 斜体小注（可换行 `\n`）、`sub` 副标、`tag_l` `tag_r` 角标、`big` 字在人后的大字（通常是 `VLOG`）。
-- `look`（可选）：覆盖调色，比如 `{"grain": 0.04, "warm": 0.03}`。
+- `look`（可选，默认不写）：模板默认不调色、不加颗粒。只有用户明确要调色时才写，比如 `{"warm": 0.03}`。
 
 ```bash
 python <SKILL>/scripts/templates/engine.py still  <workdir>/opening.json 1.0 <workdir>/f_hook.jpg     # 钩子
@@ -99,7 +99,7 @@ python <SKILL>/scripts/review/review.py serve <workdir> --video <workdir>/vlog_�
 ```
 
 - 在后台运行 serve，按你所在的 Agent 在侧边栏打开它打印的地址，地址同时发给用户。
-- 用户提交后，`python <SKILL>/scripts/review/review.py changes <workdir>` 读修改单。vlog 开头所有能改的东西都在 `opening.json` 里：换某一刀的素材就调 `content` 的顺序或换 `src`；切得太碎就改片段里的 `cut_every`（写进任务的 `shots`）；改字改 `titles`；调色改 `look`；换歌重测节拍表。改完重出片，再 `review.py done <workdir>`，下一版版本号自动 +1。
+- 用户提交后，`python <SKILL>/scripts/review/review.py changes <workdir>` 读修改单。vlog 开头所有能改的东西都在 `opening.json` 里：换某一刀的素材就调 `content` 的顺序或换 `src`；切得太碎就改片段里的 `cut_every`（写进任务的 `shots`）；改字改 `titles`；用户要调色才加 `look`；换歌重测节拍表。改完重出片，再 `review.py done <workdir>`，下一版版本号自动 +1。
 - 时间轴（`engine.py plan` 的输出）是所有模板任务共用的格式，口播开头也一样，审片台按它画镜头轨、切点和拍点。
 
 ## 规则（违反就改，不出片）
@@ -114,7 +114,7 @@ python <SKILL>/scripts/review/review.py serve <workdir> --video <workdir>/vlog_�
 
 这个技能的模板、风格和渲染器是仓库公共模板库的复制品，正本在仓库根目录：
 - `templates/shots/vlog-*.json`、`templates/sequences/opening-vlog-*.json`：镜头模板和片段模板
-- `styles/vlog.json`：皮肤（字体、文字样式、调色、配乐默认值）和开放的模板
+- `styles/vlog.json`：皮肤（字体、文字样式、配乐默认值）和开放的模板
 - `shared/templates/engine.py`（渲染器）、`shared/music/`（配乐生成和测节拍）
 
 改正本，再在仓库里跑 `bash shared/sync.sh` 复制进来，不要只改复制品。新模板的加法见 `templates/README.md`。这些模板现在都是 △，用户看过真实素材的样片后再转 ✓。
