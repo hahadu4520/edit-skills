@@ -1,0 +1,65 @@
+{
+ "id": "vlog-thanks-card",
+ "name": "致谢卡",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "纯色底 + 相框",
+ "summary": "结尾卡：黑底，上面一行卡通手写体致谢（TO MY BEST TEAM），中间一张白边合照，下面一行小字纪念语（2026 新加坡团建纪念）。来源：2026-11-11 du 给的新加坡团建 vlog（只取结构，不用它的画面）。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "黑底 + 居中相框",
+  "9 动效与花字": "致谢语 + 纪念语，淡入",
+  "2 结构": "结尾卡"
+ },
+ "background": {
+  "type": "color",
+  "color": "ink"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "thanks",
+   "anchor": [
+    0.5,
+    0.3
+   ],
+   "text_style": "card_title",
+   "enter": "fade",
+   "enter_dur": 0.4
+  },
+  {
+   "slot": "content",
+   "shape": "rect",
+   "box": [
+    0.1,
+    0.35,
+    0.8,
+    0.3
+   ],
+   "ring": {
+    "color": "white",
+    "width": 0.008
+   },
+   "enter": "fade",
+   "enter_dur": 0.4
+  },
+  {
+   "slot": "title",
+   "key": "memo",
+   "anchor": [
+    0.5,
+    0.7
+   ],
+   "text_style": "card_memo",
+   "enter": "fade",
+   "enter_dur": 0.4,
+   "at_beat": 1
+  }
+ ]
+}

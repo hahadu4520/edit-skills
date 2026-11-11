@@ -1,0 +1,44 @@
+{
+ "id": "vlog-photo-inset",
+ "name": "白边照片画中画",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容 + 小窗",
+ "summary": "正片里的一刀：全屏素材上弹出一张白边小照片（同一个地点拍的照片），像贴在相册上，停到这一刀结束。用哪张照片写在镜头的 inset 上。来源：2026-11-11 du 给的新加坡团建 vlog（只取结构，不用它的画面）。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容 + 白边小照片",
+  "8 标注": "画中画照片",
+  "9 动效与花字": "照片弹出"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "content",
+   "content": "inset",
+   "shape": "rect",
+   "box": [
+    0.5,
+    0.58,
+    0.42,
+    0.2
+   ],
+   "ring": {
+    "color": "white",
+    "width": 0.012
+   },
+   "shadow": true,
+   "enter": "pop",
+   "enter_dur": 0.2,
+   "at_beat": 1
+  }
+ ]
+}

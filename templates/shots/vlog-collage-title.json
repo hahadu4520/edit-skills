@@ -1,0 +1,60 @@
+{
+ "id": "vlog-collage-title",
+ "name": "底板逐词标题",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "一张定格的街景做底板，卡通手写体「Welcome / to / 地名」逐词跳出来，每半拍一个词。下一刀（定格拼贴）用同一张底板，观众会觉得是同一个画面在往上贴东西。来源：2026-11-11 du 给的新加坡团建 vlog（只取结构，不用它的画面）。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容（定格底板）",
+  "9 动效与花字": "卡通手写体逐词弹出",
+  "14 配乐与卡点": "前奏里，每半拍一个词"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "hello",
+   "anchor": [
+    0.5,
+    0.3
+   ],
+   "text_style": "list_word",
+   "enter": "pop",
+   "enter_dur": 0.15
+  },
+  {
+   "slot": "title",
+   "key": "to",
+   "anchor": [
+    0.5,
+    0.355
+   ],
+   "text_style": "list_word",
+   "enter": "pop",
+   "enter_dur": 0.15,
+   "at_beat": 0.5
+  },
+  {
+   "slot": "title",
+   "key": "city",
+   "anchor": [
+    0.5,
+    0.425
+   ],
+   "text_style": "collage_city",
+   "enter": "pop",
+   "enter_dur": 0.2,
+   "at_beat": 1
+  }
+ ]
+}

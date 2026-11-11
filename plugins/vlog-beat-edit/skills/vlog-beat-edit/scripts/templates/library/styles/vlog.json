@@ -6,12 +6,19 @@
   1080,
   1920
  ],
- "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；城市电影感用竖排细宋城市名；不调色、不加颗粒，保留原片色调。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
+ "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；城市电影感用竖排细宋城市名；拼贴清单开场用卡通手写体和每刀换色的店名；不调色、不加颗粒，保留原片色调。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
  "tokens": {
   "white": "#FFFFFF",
   "ink": "#141414",
   "cream": "#F4EEE4",
-  "paper": "#F4EEE4"
+  "paper": "#F4EEE4",
+  "list_1": "#FF6A3D",
+  "list_2": "#7FB2FF",
+  "list_3": "#4FD15A",
+  "list_4": "#FFD23F",
+  "list_5": "#FF8FC8",
+  "list_6": "#FFA43D",
+  "list_7": "#B48CFF"
  },
  "fonts": {
   "serif": [
@@ -37,6 +44,14 @@
    "fonts/NotoSerifSC-Light.otf",
    "/System/Library/Fonts/Supplemental/Songti.ttc#0",
    "C:/Windows/Fonts/simsun.ttc"
+  ],
+  "cartoon": [
+   "/System/Library/Fonts/Supplemental/ChalkboardSE.ttc#1",
+   "/System/Library/Fonts/Supplemental/Chalkboard.ttc#0",
+   "/System/Library/Fonts/Supplemental/MarkerFelt.ttc#0",
+   "C:/Windows/Fonts/comicbd.ttf",
+   "C:/Windows/Fonts/comic.ttf",
+   "fonts/SmileySans-Oblique.ttf"
   ]
  },
  "text": {
@@ -102,6 +117,48 @@
    "stroke": 0,
    "shadow": true,
    "track": 0.35
+  },
+  "list_word": {
+   "font": "cartoon",
+   "size": 0.046,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "cjk_font": "subtitle"
+  },
+  "list_place": {
+   "font": "cartoon",
+   "size": 0.058,
+   "fill": "list_1",
+   "stroke": 0.002,
+   "stroke_color": "ink",
+   "shadow": true,
+   "cjk_font": "subtitle"
+  },
+  "collage_city": {
+   "font": "cartoon",
+   "size": 0.068,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "cjk_font": "subtitle"
+  },
+  "card_title": {
+   "font": "cartoon",
+   "size": 0.036,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": false,
+   "track": 0.04,
+   "cjk_font": "subtitle"
+  },
+  "card_memo": {
+   "font": "subtitle",
+   "size": 0.021,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": false,
+   "track": 0.1
   }
  },
  "music": {
@@ -127,12 +184,18 @@
    "vlog-inset": "△",
    "vlog-plain": "△",
    "vlog-city-name": "△",
-   "vlog-city-name-out": "△"
+   "vlog-city-name-out": "△",
+   "vlog-collage-title": "△",
+   "vlog-collage": "△",
+   "vlog-place-list": "△",
+   "vlog-photo-inset": "△",
+   "vlog-thanks-card": "△"
   },
   "sequences": {
    "opening-vlog-beat": "△",
    "opening-vlog-behind": "△",
-   "city-cinematic": "△"
+   "city-cinematic": "△",
+   "collage-list": "△"
   }
  }
 }

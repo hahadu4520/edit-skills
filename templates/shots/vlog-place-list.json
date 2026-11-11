@@ -1,0 +1,53 @@
+{
+ "id": "vlog-place-list",
+ "name": "地点清单",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "「Welcome / to / 店名」压在这家店最有气氛的镜头上，店名每一刀换一种颜色（颜色由编排写在镜头的 accent 上）。连着几家店，一刀比一刀短，越切越快冲进正片。来源：2026-11-11 du 给的新加坡团建 vlog（只取结构，不用它的画面）。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容",
+  "9 动效与花字": "卡通手写体，店名每刀换色",
+  "14 配乐与卡点": "切点在拍上，间隔从 1.5 拍缩到 1/3 拍"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "hello",
+   "anchor": [
+    0.5,
+    0.44
+   ],
+   "text_style": "list_word"
+  },
+  {
+   "slot": "title",
+   "key": "to",
+   "anchor": [
+    0.5,
+    0.495
+   ],
+   "text_style": "list_word"
+  },
+  {
+   "slot": "title",
+   "key": "place",
+   "anchor": [
+    0.5,
+    0.56
+   ],
+   "text_style": "list_place",
+   "fill": "shot"
+  }
+ ]
+}

@@ -1,0 +1,121 @@
+{
+ "note": "拼贴清单开场的素材表样板：店名、文字随这趟行程换；标签含义见 SKILL.md「模板三」。stickers 和 plate 可以不写，collage.py 会从素材里自动挑。",
+ "titles": {
+  "hello": "Welcome",
+  "to": "to",
+  "city": "Singapore",
+  "thanks": "TO MY BEST TEAM",
+  "memo": "2026 新加坡团建纪念"
+ },
+ "clips": [
+  {
+   "src": "~/Movies/团建/street.mp4",
+   "place": "牛车水",
+   "subject": "street",
+   "scale": "wide"
+  },
+  {
+   "src": "~/Movies/团建/bar1_sign.mp4",
+   "place": "酒吧甲",
+   "subject": "sign",
+   "scale": "wide"
+  },
+  {
+   "src": "~/Movies/团建/bar1_making.mp4",
+   "place": "酒吧甲",
+   "subject": "people",
+   "scale": "medium",
+   "list": true
+  },
+  {
+   "src": "~/Movies/团建/bar1_drink.mp4",
+   "place": "酒吧甲",
+   "subject": "drink",
+   "scale": "detail",
+   "action_at": 1.6
+  },
+  {
+   "src": "~/Movies/团建/bar1_receipt.jpg",
+   "place": "酒吧甲",
+   "subject": "object",
+   "scale": "detail",
+   "sticker": true
+  },
+  {
+   "src": "~/Movies/团建/bar2_cheers.mp4",
+   "place": "酒吧乙",
+   "subject": "people",
+   "scale": "medium",
+   "list": true
+  },
+  {
+   "src": "~/Movies/团建/bar2_menu.mp4",
+   "place": "酒吧乙",
+   "subject": "object",
+   "scale": "detail"
+  },
+  {
+   "src": "~/Movies/团建/cam_screen.mp4",
+   "place": "街头",
+   "subject": "people",
+   "scale": "medium",
+   "screen": [
+    0.3,
+    0.3,
+    0.4,
+    0.22
+   ]
+  },
+  {
+   "src": "~/Movies/团建/crossing.mp4",
+   "place": "街头",
+   "subject": "street",
+   "scale": "wide"
+  },
+  {
+   "src": "~/Movies/团建/cat.mp4",
+   "place": "街头",
+   "subject": "animal",
+   "scale": "close"
+  },
+  {
+   "src": "~/Movies/团建/hawker.mp4",
+   "place": "小贩中心",
+   "subject": "street",
+   "scale": "wide"
+  },
+  {
+   "src": "~/Movies/团建/hawker_photo.jpg",
+   "place": "小贩中心",
+   "photo": true
+  },
+  {
+   "src": "~/Movies/团建/selfie.mp4",
+   "place": "小贩中心",
+   "subject": "selfie",
+   "scale": "close",
+   "talk": [
+    0.4,
+    3.0
+   ]
+  },
+  {
+   "src": "~/Movies/团建/dinner.mp4",
+   "place": "晚饭",
+   "subject": "people",
+   "scale": "medium",
+   "list": true
+  },
+  {
+   "src": "~/Movies/团建/toast.mp4",
+   "place": "晚饭",
+   "subject": "drink",
+   "scale": "close",
+   "action_at": 1.8
+  },
+  {
+   "src": "~/Movies/团建/group.jpg",
+   "group": true
+  }
+ ]
+}
