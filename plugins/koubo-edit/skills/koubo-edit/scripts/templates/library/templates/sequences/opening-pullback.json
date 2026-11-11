@@ -30,8 +30,7 @@
    "content": 0,
    "background": {
     "type": "content",
-    "dim": 0.3,
-    "blur": 0.012
+    "dim": 0.15
    }
   },
   {

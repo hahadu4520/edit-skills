@@ -191,6 +191,7 @@ class Content:
     def __init__(self, spec, base):
         self.src = os.path.join(base, os.path.expanduser(spec["src"]))
         self.push = spec.get("push", 1.06)
+        self.focus = spec.get("focus")  # 铺满时取景中心（素材宽高的比例），默认正中
         self.start = spec.get("start", 0)
         ext = os.path.splitext(self.src)[1].lower()
         self.is_img = ext in (".png", ".jpg", ".jpeg", ".webp")
@@ -199,15 +200,21 @@ class Content:
         else:
             self.cap = cv2.VideoCapture(self.src)
             self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
+            self.n = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
             self._last, self._f = -1, None
 
     def frame(self, t, dur):
         if self.is_img:
             return self.img, 1 + (self.push - 1) * min(1, max(0, t / max(dur, 0.1)))
-        i = int((self.start + t) * self.fps)
+        i = min(int((self.start + t) * self.fps), self.n - 1)  # 素材比镜头短就停在最后一帧
+        if i == self._last and self._f is not None:
+            return self._f, 1.0
         if i != self._last + 1:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, i)
         ok, f = self.cap.read()
+        if not ok and self._f is None:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.n - 2))
+            ok, f = self.cap.read()
         if ok:
             self._f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
         self._last = i
@@ -427,6 +434,8 @@ class Renderer:
         for k, s in enumerate(spec["shots"]):
             t0 = shots[-1]["t1"] if shots else 0
             n = s.get("cues", 1)
+            if job.get("split"):  # 任务里可以按这一集的句子长短，改每个镜头占几句
+                n = job["split"][k] if k < len(job["split"]) else n
             if n == "rest" or k == len(spec["shots"]) - 1:
                 t1 = end_all
                 ci = len(cues)
@@ -495,7 +504,8 @@ class Renderer:
             img = solid(S.H, S.W, S.color(B["color"]))
         elif typ == "content" and content:
             f, z = content.frame(lt, dur)
-            img = fit_crop(f, S.W, S.H, zoom=z)
+            fc = (content.focus[0] * f.shape[1], content.focus[1] * f.shape[0]) if content.focus else None
+            img = fit_crop(f, S.W, S.H, focus=fc, zoom=z, face_y=0.5)
         else:  # portrait_blur：口播画面放大、虚化、压暗
             f = self.P.frame(t)
             img = fit_crop(f, S.W, S.H)
