@@ -60,6 +60,21 @@ python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdi
 3. **素材**：卡片圆窗、斜切、宽银幕框、虚线抠像都要素材。优先用户给的 B-roll 或录屏；没有就先问用户要。实在没有，可以按口播内容做文字卡（深色底、浅色字），但要告诉用户这是占位。
 4. **先出关键帧给用户看**，确认后再 render。render 只出开头这一段（带原声），接回正片用 ffmpeg concat，或者把开头时长从粗剪里去掉再拼。
 5. 这些模板现在都是 △：只用在开头小样里，用户看过、说可以，才能用到正片其他位置。
+6. **开头也走审片台**：出完开头，用 `--style template` 打开审片台（工作目录里同时有 config.json，不加会打开正片）：
+
+   ```
+   python <SKILL>/scripts/review/review.py serve <workdir> --style template --video <workdir>/<id>_开头.mp4 --no-open
+   ```
+
+   镜头轨上每个镜头能换版式（本风格开放的镜头模板）、改占几句、换素材、调取景中心；转场轨三选一（形变、叠化、硬切）；标题轨、字幕轨直接改字；本集设置里能改转场用时，填「存为模板」就把这一版存成新片段模板。用户提交后：
+
+   ```
+   python <SKILL>/scripts/review/review.py apply <workdir>      # 能直接改的写回 opening.json，一句话要求打印出来你自己改
+   python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdir>/<id>_开头_v2.mp4
+   python <SKILL>/scripts/review/review.py done <workdir>
+   ```
+
+   第一次 apply 会把片段模板摊开写进 opening.json 的 `shots`（原来的片段名留在 `from_sequence`），之后改镜头都改这里。存成的新片段模板在插件目录的 `scripts/templates/library/templates/sequences/my-*.json`，重装插件会被覆盖：告诉用户，并把它连同 `styles/koubo.json` 里新挂的一行提交到 edit-skills 仓库。
 
 ## 审片和修改（审片台）
 

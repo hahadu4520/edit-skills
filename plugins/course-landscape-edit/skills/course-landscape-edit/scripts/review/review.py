@@ -7,10 +7,14 @@
       打印最新一份还没处理的修改单（Agent 读这个来改）。处理完运行 `done` 标记。
   python review.py done <工作目录>
       把最新修改单标记为已处理，下次 serve 版本号自动 +1。
+  python review.py apply <工作目录>
+      只给版式模板出的片（工作目录里有 job.json）：把修改单里的版式、句数、素材、取景、转场、标题、字幕
+      直接写回 job.json，「存为模板」存成新的片段模板；一句话要求打印出来给 Agent 改。然后重新 render。
   python review.py launch <工作目录> [--port 8765]
       给 Claude 桌面版写 <工作目录>/.claude/launch.json，让审片台在它的 Browser 侧栏里打开。
 
-现在支持：课程横版（工作目录里有 ed/segs.json）、朴素版口播（有 config.json）、像素风（有 render_full.py）。
+现在支持：课程横版（工作目录里有 ed/segs.json）、朴素版口播（有 config.json）、像素风（有 render_full.py）、
+版式模板出的片（有 job.json，任何风格：口播开头、vlog 卡点开头都是这一种）。
 只用 Python 标准库和 ffmpeg/ffprobe，Mac 和 Windows 都能跑。
 这个文件和 page.html 的正本在仓库 shared/review/，各风格 scripts/review/ 是复制品。
 """
@@ -269,10 +273,244 @@ def pixel(wd, dur):
                 thumbs_at=[(a + b) / 2 for _, a, b in seg])
 
 
+# ---------- 版式模板出的片（工作目录里有 job.json，用 templates/engine.py 渲染） ----------
+ENGINE = os.path.normpath(os.path.join(HERE, "..", "templates", "engine.py"))
+TR_NAME = {"morph": "形变", "fade": "叠化", "cut": "硬切"}
+TR_KEY = {v: k for k, v in TR_NAME.items()}
+TR_OPTS = [{"v": "形变"}, {"v": "叠化"}, {"v": "硬切"}]
+CUT_OPTS = [{"v": "不切"}, {"v": "每半拍"}, {"v": "每拍"}, {"v": "每两拍"}]
+CUT_KEY = {"不切": None, "每半拍": 0.5, "每拍": 1, "每两拍": 2}
+
+
+JOB_NAMES = ("job.json", "opening.json")
+
+
+def job_path(wd):
+    """模板任务文件：job.json 或 opening.json；都没有就找目录里第一份带 style + sequence/shots 的 json。"""
+    for n in JOB_NAMES:
+        if os.path.exists(os.path.join(wd, n)): return os.path.join(wd, n)
+    for p in sorted(glob.glob(os.path.join(wd, "*.json"))):
+        try: j = jload(p)
+        except Exception: continue
+        if isinstance(j, dict) and "style" in j and ("sequence" in j or "shots" in j): return p
+    return None
+
+
+def job_plan(wd):
+    """engine.py plan 的时间轴（镜头、切点、文字、拍点），口播开头和 vlog 卡点同一个格式。"""
+    return json.loads(sh(sys.executable, ENGINE, "plan", job_path(wd)))
+
+
+# 模板库：插件里在 scripts/templates/library，仓库里在仓库根目录
+LIB_DIRS = [os.path.join(os.path.dirname(ENGINE), "library"), os.path.normpath(os.path.join(HERE, "..", ".."))]
+
+
+def lib_load(sub, name):
+    for d in LIB_DIRS:
+        p = os.path.join(d, sub, name + ".json")
+        if os.path.exists(p): return jload(p)
+    return None
+
+
+def lib_dir():
+    return next(d for d in LIB_DIRS if os.path.isdir(os.path.join(d, "templates", "sequences")))
+
+
+def job_lib(job):
+    """风格开放的镜头模板（id → 名字、状态）和这一集的片段模板。"""
+    sty = lib_load("styles", job.get("style", "koubo")) or {}
+    shots = {}
+    for k, st in sty.get("templates", {}).get("shots", {}).items():
+        t = lib_load("templates/shots", k)
+        if t: shots[k] = {"name": t.get("name", k), "status": st}
+    seq = {"shots": job["shots"], "transition": job.get("transition", {})} if "shots" in job else lib_load("templates/sequences", job["sequence"])
+    return sty, shots, seq
+
+
+def job_srcs(wd):
+    j = jload(job_path(wd))
+    ps = [c["src"] for c in j.get("content", [])] + ([j["portrait"]["src"]] if j.get("portrait") else [])
+    if j.get("music"): ps.append(j["music"]["src"])
+    return {os.path.abspath(os.path.join(wd, os.path.expanduser(p))) for p in ps}
+
+
+def job_video(wd):
+    srcs = job_srcs(wd)
+    c = [p for p in glob.glob(os.path.join(wd, "*.mp4")) if os.path.abspath(p) not in srcs]
+    if not c: raise SystemExit("找不到这一版的成片：先 python engine.py render <任务>.json <名字>.mp4，或用 --video 指定")
+    return max(c, key=os.path.getmtime)
+
+
+def tline(t):  # 标题里的换行在输入框里写成 " / "
+    return t.replace("\n", " / ")
+
+
+def tmpl(wd, dur):
+    job = jload(job_path(wd)); P = job_plan(wd); sty, lib, seq = job_lib(job)
+    W, H = P["canvas"]
+    cues = job.get("cues", []); content = job.get("content", [])
+    cidx = {c["src"]: i for i, c in enumerate(content)}
+    lay_opts = [{"v": v["name"], **({"tag": "待试"} if v["status"] == "△" else {}), **({"off": "这个风格不允许"} if v["status"] == "✗" else {})}
+                for v in lib.values()]
+    c_opts = [{"v": "无"}] + [{"v": f"{i+1} {os.path.splitext(os.path.basename(c['src']))[0]}"} for i, c in enumerate(content)]
+    tr = seq.get("transition", {}); default_tr = tr.get("type", "morph"); T = tr.get("duration", 0.4)
+    shots, trans, titles, cuts = [], [], {}, []
+    n_sh = len(P["shots"])
+    for k, s in enumerate(P["shots"]):
+        spec = seq["shots"][k] if k < len(seq["shots"]) else {}
+        nm = lib.get(s["template"], {}).get("name") or (lib_load("templates/shots", s["template"]) or {}).get("name", s["template"])
+        f = [{"k": "layout", "label": "版式", "type": "seg", "v": nm, "opts": lay_opts}]
+        if s.get("beats"):
+            f.append({"k": "beats", "label": "占几拍", "type": "range", "min": 1, "max": 32, "step": 1, "v": s["beats"]})
+            f.append({"k": "cut_every", "label": "素材快切", "type": "seg",
+                      "v": next((a for a, b in CUT_KEY.items() if b == s.get("cut_every")), "不切"), "opts": CUT_OPTS})
+        elif k < n_sh - 1 and cues:
+            n = sum(1 for c in cues if s["t0"] - 0.05 <= c[0] < s["t1"] - 0.05)
+            f.append({"k": "cues", "label": "占几句", "type": "range", "min": 1, "max": len(cues), "step": 1, "v": max(1, n)})
+        else:
+            f.append({"k": "len", "label": "长度", "type": "ro", "v": "到结尾"})
+        segs = s.get("segments", [])
+        if content and len(segs) == 1:  # 一个镜头一段素材：能换素材、调取景
+            ci = cidx.get(segs[0]["content"])
+            if ci is not None:
+                fx, fy = content[ci].get("focus", [0.5, 0.5])
+                f += [{"k": "content", "label": "素材", "type": "seg", "v": c_opts[ci + 1]["v"], "opts": c_opts},
+                      {"k": "fx", "label": "取景左右", "type": "range", "min": 0, "max": 1, "step": 0.05, "v": fx},
+                      {"k": "fy", "label": "取景上下", "type": "range", "min": 0, "max": 1, "step": 0.05, "v": fy}]
+        elif len(segs) > 1:  # 按拍快切：每一刀单独一条，在「素材」轨上
+            for j, g in enumerate(segs):
+                ci = cidx.get(g["content"])
+                cuts.append(dict(t0=g["t0"], t1=g["t1"], name=os.path.splitext(os.path.basename(g["content"]))[0],
+                                 src=f"job.content[{ci}]", ph="例：这一刀换成海边那段",
+                                 f=[{"k": "content", "label": "素材", "type": "ro", "v": g["content"]},
+                                    {"k": "fx", "label": "取景左右", "type": "range", "min": 0, "max": 1, "step": 0.05,
+                                     "v": content[ci].get("focus", [0.5, 0.5])[0]},
+                                    {"k": "fy", "label": "取景上下", "type": "range", "min": 0, "max": 1, "step": 0.05,
+                                     "v": content[ci].get("focus", [0.5, 0.5])[1]}]))
+        shots.append(dict(id=f"shot-{k+1}", t0=s["t0"], t1=s["t1"], name=f"{k+1} {nm}", thumb=k,
+                          src=f"job.shots[{k}]", ph="例：这段换成斜切分屏，素材用第 3 段", f=f))
+        if k:
+            tv = TR_NAME.get(spec.get("transition", default_tr), "形变")
+            trans.append(dict(t0=s["t0"], t1=s["t0"] + T, name=f"{k} → {k+1}", src=f"job.shots[{k}].transition", ph="例：改成硬切",
+                              f=[{"k": "kind", "label": "转场", "type": "seg", "v": tv, "opts": TR_OPTS}]))
+        for tk, tx in s.get("texts", {}).items():
+            a, b, _ = titles.get(tk, (s["t0"], s["t1"], tx))
+            titles[tk] = (min(a, s["t0"]), max(b, s["t1"]), tx)
+    fx = [dict(t0=a, t1=b, name=tline(tx), src=f"job.titles.{tk}", ph="例：改成「别再这样写提示词」",
+               f=[{"k": "text", "label": "标题", "type": "text", "v": tline(tx), "note": "「 / 」是换行"}])
+          for tk, (a, b, tx) in titles.items()]
+    subs = []
+    for j, (a, b, t) in enumerate(cues):
+        subs.append(dict(t0=a, t1=b, name=t, src=f"job.cues[{j}]", ph="例：这句断在「其实」后面",
+                         f=[{"k": "text", "label": "文字", "type": "text", "v": t},
+                            {"k": "t0", "label": "出现", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(a, 2)},
+                            {"k": "t1", "label": "消失", "type": "range", "min": 0, "max": dur, "step": 0.1, "v": round(b, 2)}]))
+    tracks = [dict(key="shot", name="镜头", items=shots), dict(key="trans", name="转场", items=trans)]
+    if cuts: tracks.append(dict(key="move", name="快切", items=cuts))
+    if P.get("music"):  # 拍点：只读，看切点有没有落在拍上
+        m = P["music"]; bl = 60 / m["bpm"]
+        tracks.append(dict(key="beep", name="拍点", items=[dict(t0=t, t1=t + min(0.12, bl / 3), name="落点" if abs(t - m["drop"]) < 0.02 else "",
+                                                               src="music", ph="例：落点往后挪一拍",
+                                                               f=[{"k": "t", "label": "时间", "type": "ro", "v": f"{t:.2f}s"}]) for t in m["beats"]]))
+    tracks.append(dict(key="fx", name="标题", items=fx))
+    if subs: tracks.append(dict(key="sub", name="字幕", items=subs))
+    ep = [{"k": "tdur", "label": "转场用时", "type": "seg", "v": f"{T}s",
+           "opts": [{"v": "0.3s"}, {"v": "0.4s"}, {"v": "0.6s"}, {"v": "0.8s"}]},
+          {"k": "save_as", "label": "存为模板", "type": "text", "v": "",
+           "note": "填一个名字，提交后这一版的镜头顺序存成新的片段模板，下一集能直接套"}]
+    sname = seq.get("name") or "自己排的镜头"
+    return dict(style="template", styleName=f"{sname} · {sty.get('name', job.get('style', ''))}", W=W, H=H, bg="#000000",
+                tracks=tracks, ep=ep, epHint="例：整段节奏再快一点", subRect=[0.05, 0.76, 0.9, 0.06],
+                thumbs_at=[(s["t0"] + s["t1"]) / 2 for s in P["shots"]])
+
+
+def focus(c, st):
+    fo = list(c.get("focus", [0.5, 0.5]))
+    if "fx" in st: fo[0] = float(st["fx"])
+    if "fy" in st: fo[1] = float(st["fy"])
+    c["focus"] = fo
+
+
+def tmpl_apply(wd):
+    """把最新修改单里能直接改的字段写回 job.json；改不了的（一句话要求）打印出来给 Agent 处理。"""
+    s = sheets(wd)
+    if not s or jload(s[-1][1]).get("done"):
+        print("没有待处理的修改单。"); return
+    sheet = jload(s[-1][1]); jp = job_path(wd); job = jload(jp); P = job_plan(wd); sty, lib, seq = job_lib(job)
+    bak = os.path.join(rdir(wd), f"job_{sheet['from']}.json")
+    if not os.path.exists(bak): json.dump(job, open(bak, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    names = {v["name"]: k for k, v in lib.items()}
+    if "shots" not in job:  # 第一次改：把片段模板摊开写进任务文件，句数按这一集的 split
+        job["shots"] = []
+        for k, sp in enumerate(seq["shots"]):
+            d = dict(sp)
+            if job.get("split") and k < len(job["split"]) and "beats" not in d: d["cues"] = job["split"][k]
+            job["shots"].append(d)
+        job["transition"] = seq.get("transition", {"type": "morph", "duration": 0.4})
+        job["from_sequence"] = job.pop("sequence"); job.pop("split", None)
+    cidx = {c["src"]: i for i, c in enumerate(job.get("content", []))}
+    left = []
+    for c in sheet["changes"]:
+        e = c.get("element") or {}; src = e.get("source") or ""; st = {k: v["to"] for k, v in c["set"].items()}
+        m = re.match(r"job\.shots\[(\d+)\](\.transition)?$", src)
+        if m:
+            sh_ = job["shots"][int(m.group(1))]
+            if m.group(2):
+                if "kind" in st: sh_["transition"] = TR_KEY[st["kind"]]
+            else:
+                if "layout" in st: sh_["template"] = names[st["layout"]]
+                if "cues" in st: sh_["cues"] = int(st["cues"])
+                if "beats" in st: sh_["beats"] = float(st["beats"])
+                if "cut_every" in st:
+                    if CUT_KEY[st["cut_every"]] is None: sh_.pop("cut_every", None)
+                    else: sh_["cut_every"] = CUT_KEY[st["cut_every"]]
+                if "content" in st:
+                    if st["content"] == "无": sh_.pop("content", None)
+                    else: sh_["content"] = int(st["content"].split()[0]) - 1
+                if ("fx" in st or "fy" in st):
+                    segs = P["shots"][int(m.group(1))].get("segments", [])
+                    ci = sh_["content"] if "content" in st and isinstance(sh_.get("content"), int) else (cidx.get(segs[0]["content"]) if segs else None)
+                    if ci is not None: focus(job["content"][ci], st)
+        m = re.match(r"job\.content\[(\d+)\]$", src)
+        if m: focus(job["content"][int(m.group(1))], st)
+        m = re.match(r"job\.titles\.(\w+)$", src)
+        if m and "text" in st: job["titles"][m.group(1)] = st["text"].replace(" / ", "\n")
+        m = re.match(r"job\.cues\[(\d+)\]$", src)
+        if m:
+            cu = job["cues"][int(m.group(1))]
+            if "text" in st: cu[2] = st["text"]
+            if "t0" in st: cu[0] = float(st["t0"])
+            if "t1" in st: cu[1] = float(st["t1"])
+        if "tdur" in st: job.setdefault("transition", {})["duration"] = float(st["tdur"].rstrip("s"))
+        if c.get("ask_ai"): left.append(f"{c['t']:.1f}s {e.get('name') or ''}：{c['ask_ai']}")
+        if st.get("save_as"): job["_save_as"] = st["save_as"]
+    name = job.pop("_save_as", None)
+    json.dump(job, open(jp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"已写回 {jp}（改前的备份：{bak}）")
+    if name:
+        ld = lib_dir(); sid = "my-" + __import__("time").strftime("%Y%m%d-%H%M")
+        seq = {"id": sid, "name": name, "kind": "sequence", "status": "△",
+               "summary": " → ".join(lib.get(x["template"], {}).get("name", x["template"]) for x in job["shots"]),
+               "from": job.get("from_sequence"), "transition": job.get("transition", {}),
+               "shots": [{k: v for k, v in x.items()} for x in job["shots"]]}
+        seq["shots"][-1]["cues"] = "rest"
+        out = os.path.join(ld, "templates", "sequences", sid + ".json")
+        json.dump(seq, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        sp = os.path.join(ld, "styles", job.get("style", "koubo") + ".json"); sty = jload(sp)
+        sty.setdefault("templates", {}).setdefault("sequences", {})[sid] = "△"
+        json.dump(sty, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        print(f"已存成片段模板「{name}」：{out}（风格 {job.get('style', 'koubo')} 里挂成 △）")
+    if left:
+        print("下面这些要 Agent 自己处理（改完再渲染）：")
+        for x in left: print("  " + x)
+    print(f"重新出片：python {ENGINE} render {jp} <新版本>.mp4，再运行 review.py done")
+
+
 # 风格：(读工程, 认目录, 找成片)
 STYLES = {"course": (course, lambda wd: os.path.exists(os.path.join(wd, "ed", "segs.json")) or os.path.exists(os.path.join(wd, "segs.json")), None),
           "koubo": (koubo, lambda wd: os.path.exists(os.path.join(wd, "config.json")) and "src" in koubo_cfg(wd), koubo_video),
-          "pixel": (pixel, lambda wd: bool(pixel_src(wd)), None)}
+          "pixel": (pixel, lambda wd: bool(pixel_src(wd)), None),
+          "template": (tmpl, lambda wd: bool(job_path(wd)), job_video)}
 
 
 # ---------- 版本和修改单 ----------
@@ -327,6 +565,7 @@ def build(wd, video, style):
     dur, w, h = probe(video)
     fn = STYLES[style][0]
     D = fn(wd, dur)
+    D.pop("_names", None)
     n = cur_ver(wd)
     D.update(duration=dur, video="video", videoName=os.path.basename(video), ver=f"v{n}", next=f"v{n+1}",
              title=os.path.basename(os.path.abspath(wd)), history=history(wd))
@@ -461,11 +700,12 @@ def detect(wd):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if len(a) < 2 or a[0] not in ("serve", "changes", "done", "launch"): raise SystemExit(__doc__)
+    if len(a) < 2 or a[0] not in ("serve", "changes", "done", "launch", "apply"): raise SystemExit(__doc__)
     cmd, wd = a[0], a[1]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d
     if cmd == "serve":
         serve(wd, opt("--video"), opt("--style") or detect(wd), int(opt("--port", 8765)), "--no-open" not in a)
     elif cmd == "launch": launch(wd, int(opt("--port", 8765)))
     elif cmd == "changes": changes(wd)
+    elif cmd == "apply": tmpl_apply(wd)
     else: done(wd)

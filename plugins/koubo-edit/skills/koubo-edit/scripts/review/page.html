@@ -195,7 +195,7 @@ pop.querySelectorAll('input[type=range]').forEach(i=>{i.oninput=()=>{i.nextEleme
 pop.querySelectorAll('input,textarea,select').forEach(i=>i.addEventListener('keydown',ev=>ev.stopPropagation()));
 // 一改就记、马上预览
 function stage(k,nv){const f=e.f.find(f=>f.k===k);if(f.g)R.forEach(r=>{if(r.el&&r.el.startsWith(e.track+'-')&&r.el!==e.id)delete r.ch[k]});
-const r=recFor(e);setCh(e,k,nv,r.t);if(k==='layout'){['cbox','pbox','sbox'].forEach(x=>delete r.ch[x]);showLay(e)}pop.querySelector(`[data-k="${k}"]`).closest('.f').classList.toggle('chg',!!r.ch[k]);done();if(canPrev(e))preview(e)}
+const r=recFor(e);setCh(e,k,nv,r.t);if(k==='layout'&&D.layout){['cbox','pbox','sbox'].forEach(x=>delete r.ch[x]);showLay(e)}pop.querySelector(`[data-k="${k}"]`).closest('.f').classList.toggle('chg',!!r.ch[k]);done();if(canPrev(e))preview(e)}
 function done(){const r=recOf(e.id),has=r&&(Object.keys(r.ch).length||r.text);$('#st').textContent=has?'已记入修改单':'';$('#undo').hidden=!has;render()}
 $('#ai').oninput=()=>{const r=recFor(e);r.text=$('#ai').value.trim();$('#cnt').textContent=R.length;$('#st').textContent=r.text||Object.keys(r.ch).length?'已记入修改单':''};$('#ai').onchange=done;
 $('#undo').onclick=()=>{R=R.filter(x=>x.el!==e.id);selRec=null;render();openEl(e,null,false);if(canPrev(e))preview(e);drawLay()}}

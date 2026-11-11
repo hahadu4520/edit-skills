@@ -91,13 +91,20 @@ python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdi
 很难一次出对，每出一版都用审片台让用户看片、定点改：
 
 ```bash
-python <SKILL>/scripts/templates/engine.py plan <workdir>/opening.json <workdir>/opening.plan.json   # 时间轴：镜头、切点、用了哪段素材、文字、拍点
 python <SKILL>/scripts/review/review.py serve <workdir> --video <workdir>/vlog_开头.mp4 --no-open
 ```
 
-- 在后台运行 serve，按你所在的 Agent 在侧边栏打开它打印的地址，地址同时发给用户。
-- 用户提交后，`python <SKILL>/scripts/review/review.py changes <workdir>` 读修改单。vlog 开头所有能改的东西都在 `opening.json` 里：换某一刀的素材就调 `content` 的顺序或换 `src`；切得太碎就改片段里的 `cut_every`（写进任务的 `shots`）；改字改 `titles`；调色改 `look`；换歌重测节拍表。改完重出片，再 `review.py done <workdir>`，下一版版本号自动 +1。
-- 时间轴（`engine.py plan` 的输出）是所有模板任务共用的格式，口播开头也一样，审片台按它画镜头轨、切点和拍点。
+- 在后台运行 serve，按你所在的 Agent 在侧边栏打开它打印的地址，地址同时发给用户。审片台自己调 `engine.py plan` 读时间轴（镜头、切点、用了哪段素材、文字、拍点），工作目录里有 `opening.json`（或 `job.json`）就认得出。
+- 轨道：**镜头**（换版式、改占几拍、素材快切每半拍 / 每拍 / 每两拍 / 不切）、**转场**、**快切**（每一刀用的素材，能调取景中心）、**拍点**（只读，落点单独标出来，看切点有没有踩在拍上）、**标题**。本集设置里填「存为模板」，提交后存成新片段模板。
+- 用户提交后：
+
+  ```bash
+  python <SKILL>/scripts/review/review.py apply <workdir>     # 能直接改的写回 opening.json，一句话要求打印出来
+  python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdir>/vlog_开头_v2.mp4
+  python <SKILL>/scripts/review/review.py done <workdir>
+  ```
+
+  apply 改不了的（一句话要求）自己改 `opening.json`：换某一刀的素材就调 `content` 的顺序或换 `src`；调色改 `look`；换歌重测节拍表。第一次 apply 会把片段模板摊开写进 `shots`（原片段名留在 `from_sequence`）。存成的新片段模板在插件的 `scripts/templates/library/`，重装会被覆盖：告诉用户，并提交到 edit-skills 仓库。
 
 ## 规则（违反就改，不出片）
 
