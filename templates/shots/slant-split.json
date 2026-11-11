@@ -1,0 +1,128 @@
+{
+ "id": "slant-split",
+ "name": "斜切分屏",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16"
+ ],
+ "layout_class": "分屏",
+ "summary": "素材在下半，人像从上方斜切进来，中间是一条斜线；左上角一块深色三角放黄色大标题。",
+ "needs": [
+  "portrait",
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "上人像 / 下素材，斜线分割",
+  "6 字幕": "素材区上方",
+  "9 动效与花字": "左上深色三角 + 标题",
+  "10 人像": "斜切多边形，从上方扫入"
+ },
+ "background": {
+  "type": "paper"
+ },
+ "layers": [
+  {
+   "slot": "content",
+   "shape": "polygon",
+   "points": [
+    [
+     0,
+     0.52
+    ],
+    [
+     1,
+     0.4
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  {
+   "slot": "portrait",
+   "shape": "polygon",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     1,
+     0.4
+    ],
+    [
+     0,
+     0.52
+    ]
+   ],
+   "face_width": 0.3,
+   "enter": "slide_down",
+   "edge": {
+    "segments": [
+     [
+      [
+       1,
+       0.4
+      ],
+      [
+       0,
+       0.52
+      ]
+     ]
+    ],
+    "color": "white",
+    "width": 0.005
+   },
+   "face_y": 0.6
+  },
+  {
+   "slot": "panel",
+   "shape": "polygon",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     0.62,
+     0
+    ],
+    [
+     0,
+     0.13
+    ]
+   ],
+   "fill": "ink",
+   "opacity": 0.9
+  },
+  {
+   "slot": "title",
+   "anchor": [
+    0.04,
+    0.05
+   ],
+   "align": "left",
+   "text_style": "title_small",
+   "enter": "pop",
+   "max_w": 0.55
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.8
+   ],
+   "text_style": "subtitle"
+  }
+ ]
+}

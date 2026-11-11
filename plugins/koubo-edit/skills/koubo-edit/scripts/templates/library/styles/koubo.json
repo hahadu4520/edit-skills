@@ -1,0 +1,129 @@
+{
+ "id": "koubo",
+ "name": "朴素版口播",
+ "aspect": "9:16",
+ "canvas": [
+  1080,
+  1920
+ ],
+ "summary": "皮肤：模板里引用的颜色、字体、字号都从这里取。templates 一节列出这个风格开放哪些模板。",
+ "tokens": {
+  "paper": "#EEE6D8",
+  "ink": "#141414",
+  "accent": "#FFD400",
+  "warn": "#FF3B30",
+  "white": "#FFFFFF",
+  "cyan": "#4FD1FF"
+ },
+ "fonts": {
+  "title": [
+   "fonts/NotoSerifCJKsc-Black.otf"
+  ],
+  "subtitle": [
+   "/System/Library/Fonts/Hiragino Sans GB.ttc#2",
+   "C:/Windows/Fonts/msyhbd.ttc#0",
+   "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc#2",
+   "fonts/SmileySans-Oblique.ttf"
+  ],
+  "brush": [
+   "fonts/MaShanZheng-Regular.ttf"
+  ],
+  "round": [
+   "fonts/SmileySans-Oblique.ttf"
+  ]
+ },
+ "text": {
+  "title": {
+   "font": "title",
+   "size": 0.072,
+   "fill": "white",
+   "stroke": 0.004,
+   "stroke_color": "ink",
+   "shadow": true,
+   "line_height": 1.12
+  },
+  "title_accent": {
+   "font": "title",
+   "size": 0.088,
+   "fill": "accent",
+   "stroke": 0.005,
+   "stroke_color": "ink",
+   "shadow": true,
+   "line_height": 1.08
+  },
+  "title_two": {
+   "font": "title",
+   "size": 0.08,
+   "fills": [
+    "white",
+    "accent"
+   ],
+   "stroke": 0.005,
+   "stroke_color": "ink",
+   "shadow": true,
+   "line_height": 1.1
+  },
+  "hook": {
+   "font": "title",
+   "size": 0.056,
+   "fill": "white",
+   "stroke": 0.004,
+   "stroke_color": "ink",
+   "shadow": true
+  },
+  "subtitle": {
+   "font": "subtitle",
+   "size": 0.035,
+   "fill": "white",
+   "stroke": 0.0022,
+   "stroke_color": "ink",
+   "shadow": true
+  },
+  "subtitle_ink": {
+   "font": "title",
+   "size": 0.04,
+   "fill": "ink",
+   "stroke": 0,
+   "track": 0.04
+  },
+  "subtitle_bar": {
+   "font": "subtitle",
+   "size": 0.037,
+   "fill": "white",
+   "stroke": 0.0016,
+   "stroke_color": "ink",
+   "box": {
+    "fill": "ink",
+    "alpha": 0.82,
+    "pad": 0.35
+   }
+  },
+  "title_small": {
+   "font": "title",
+   "size": 0.066,
+   "fill": "accent",
+   "stroke": 0.0045,
+   "stroke_color": "ink",
+   "shadow": true,
+   "line_height": 1.08
+  }
+ },
+ "templates": {
+  "note": "这个风格开放的模板。△ 待试：只在开头小样里用，du 看过转 ✓ 后才能用在正片。",
+  "shots": {
+   "full-portrait": "✓",
+   "sticker-hook": "△",
+   "card-pip": "△",
+   "sandwich": "△",
+   "slant-split": "△",
+   "blur-pip": "△",
+   "cinema-band": "△",
+   "dashed-cutout": "△"
+  },
+  "sequences": {
+   "opening-sticker": "△",
+   "opening-slant": "△",
+   "opening-pullback": "△"
+  }
+ }
+}

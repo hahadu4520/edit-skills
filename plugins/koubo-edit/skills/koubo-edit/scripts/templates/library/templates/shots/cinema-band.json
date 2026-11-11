@@ -1,0 +1,64 @@
+{
+ "id": "cinema-band",
+ "name": "宽银幕框",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16"
+ ],
+ "layout_class": "全屏内容 + 抠像",
+ "summary": "素材铺满，中部两条白细线框出一条横幅像电影画幅，下方压暗；抠像人物从左滑进框里，头顶到上线，字幕在下线下面逐字打出。",
+ "needs": [
+  "portrait",
+  "content",
+  "matting"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容 + 横幅框",
+  "6 字幕": "框下方，逐字打出",
+  "10 人像": "抠像，从左滑入",
+  "11 布景": "素材铺满，框下压暗"
+ },
+ "background": {
+  "type": "content",
+  "lower_dim": [
+   0.66,
+   0.5
+  ]
+ },
+ "layers": [
+  {
+   "slot": "lines",
+   "ys": [
+    0.36,
+    0.66
+   ],
+   "color": "white",
+   "width": 0.0022,
+   "enter": "draw"
+  },
+  {
+   "slot": "portrait",
+   "shape": "cutout",
+   "box": [
+    0.0,
+    0.3,
+    0.62,
+    0.36
+   ],
+   "align": "left",
+   "enter": "slide_left",
+   "enter_dur": 0.4,
+   "bust": true
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.71
+   ],
+   "text_style": "subtitle",
+   "enter": "type"
+  }
+ ]
+}

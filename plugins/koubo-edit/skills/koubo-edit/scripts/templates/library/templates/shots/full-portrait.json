@@ -1,0 +1,53 @@
+{
+ "id": "full-portrait",
+ "name": "全屏人像",
+ "kind": "shot",
+ "status": "✓",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏人像",
+ "summary": "口播原画面铺满，字幕在下方。其他模板形变的起点和终点。",
+ "needs": [
+  "portrait"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏人像",
+  "6 字幕": "风格默认位置",
+  "10 人像": "全屏，矩形"
+ },
+ "background": {
+  "type": "paper"
+ },
+ "layers": [
+  {
+   "slot": "portrait",
+   "shape": "rect",
+   "box": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "radius": 0
+  },
+  {
+   "slot": "title",
+   "anchor": [
+    0.5,
+    0.11
+   ],
+   "text_style": "title_two",
+   "enter": "pop"
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.76
+   ],
+   "text_style": "subtitle"
+  }
+ ]
+}

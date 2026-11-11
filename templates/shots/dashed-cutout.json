@@ -1,0 +1,55 @@
+{
+ "id": "dashed-cutout",
+ "name": "虚线抠像",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容 + 抠像",
+ "summary": "素材铺满当背景，抠像人物放右下角，外面一圈白色虚线；字幕是黑底白字贴底。最像「主播站在素材前讲解」。",
+ "needs": [
+  "portrait",
+  "content",
+  "matting"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容 + 右下抠像",
+  "6 字幕": "贴底，黑底条",
+  "10 人像": "抠像 + 白虚线",
+  "11 布景": "素材铺满"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "portrait",
+   "shape": "cutout",
+   "box": [
+    0.34,
+    0.56,
+    0.66,
+    0.44
+   ],
+   "align": "right",
+   "stroke": {
+    "style": "dashed",
+    "color": "white",
+    "width": 0.01,
+    "dash": 0.022
+   },
+   "enter": "rise",
+   "bust": true
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.865
+   ],
+   "text_style": "subtitle_bar"
+  }
+ ]
+}

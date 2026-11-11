@@ -73,7 +73,9 @@ plugins/
       scripts/                         样板片的完整剪辑工程，新片照着改
       fonts/  examples/                字体 / 样板片的时间轴和截图
 DIMENSIONS.md                          剪辑维度配置表：所有风格和审片台的总表
-shared/                                各风格共用的代码和资源（待抽取）
+templates/                             模板库：镜头模板、片段模板（如口播开头），说明见 templates/README.md
+styles/                                风格文件：每个风格的皮肤（颜色、字体）和开放的模板
+shared/                                各风格共用的代码：审片台 review/、版式模板渲染器 templates/
 install.sh / install.ps1               非 Claude Code 的安装脚本：install.sh <插件名>
 ```
 

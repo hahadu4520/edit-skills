@@ -43,6 +43,8 @@ PIP="$DEST/venv/bin/pip"
 MIRROR="https://pypi.tuna.tsinghua.edu.cn/simple"
 # 国内网络连 pypi.org 常常很慢：先试官方源，失败就自动换清华镜像
 $PIP install -q --timeout 30 pillow jieba $ASR || $PIP install -q --timeout 60 -i "$MIRROR" pillow jieba $ASR
+# 开头版式模板（抠像、圆窗、形变转场）用的：失败不影响其他步骤
+$PIP install -q --timeout 30 numpy opencv-python-headless mediapipe || $PIP install -q --timeout 60 -i "$MIRROR" numpy opencv-python-headless mediapipe || echo "⚠️  版式模板的依赖没装上，剪口播不受影响，要用开头模板时再装。"
 
 echo "④ 预先下载转写模型（约 1.6GB，只需要一次）…"
 if [ "$ASR" = "mlx-whisper" ]; then MODEL=mlx-community/whisper-large-v3-turbo; else MODEL=mobiuslabsgmbh/faster-whisper-large-v3-turbo; fi

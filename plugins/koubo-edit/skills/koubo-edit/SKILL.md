@@ -45,6 +45,22 @@ workdir:  ~/Downloads/<id>_work      # 每期一个工作目录，config.json �
 8. **烧录**：`koubo burn <workdir> [--en]`，输出 `<id>_成片.mp4` / `<id>_成片_双语.mp4`。抽几帧检查同步。
 9. **封面**：先挑帧，再跑 `koubo cover <workdir>`。在 `cover.frames` 里填时间 t、脸中心 cx、眼睛高度 eye、裁切宽度 cw 和版式 layout（stack / brush / stagger）。
 
+## 开头版式模板（△ 待试）
+
+口播开头可以套版式模板：人像缩成圆窗、抠像描边、斜切分屏，配素材和大标题，镜头之间用形变转场。模板只定结构，颜色和字体用本风格的皮肤（`scripts/templates/library/styles/koubo.json`）。模板清单和格式见仓库的 [templates/README.md](https://github.com/hahadu4520/edit-skills/blob/main/templates/README.md)。
+
+```
+python <SKILL>/scripts/templates/engine.py list                         # 有哪些模板
+python <SKILL>/scripts/templates/engine.py still  <workdir>/opening.json 3.5 <workdir>/opening_3.5.jpg
+python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdir>/<id>_开头.mp4
+```
+
+1. **选开头**：三个片段模板 `opening-sticker`（贴纸钩子开场）、`opening-slant`（斜切开场）、`opening-pullback`（全屏收圆窗开场）。不确定就三个都出，给用户挑。
+2. **写 `<workdir>/opening.json`**：`portrait.src` 填原片，`portrait.start` 填开头第一句在原片里的秒数；`cues` 填开头这几句字幕（时间从 start 起算，可以从 cues.txt 或成片字幕里取）；`titles.hook` 是钩子大标题，2 行、每行不超过 5 个字，要是这条视频里的原话或忠实概括；`content` 填素材。
+3. **素材**：卡片圆窗、斜切、宽银幕框、虚线抠像都要素材。优先用户给的 B-roll 或录屏；没有就先问用户要。实在没有，可以按口播内容做文字卡（深色底、浅色字），但要告诉用户这是占位。
+4. **先出关键帧给用户看**，确认后再 render。render 只出开头这一段（带原声），接回正片用 ffmpeg concat，或者把开头时长从粗剪里去掉再拼。
+5. 这些模板现在都是 △：只用在开头小样里，用户看过、说可以，才能用到正片其他位置。
+
 ## 审片和修改（审片台）
 
 每出一版（小样或全片），都用审片台让用户看片、改：用户在网页里边看边标「这里要改」，点元素直接改属性或写一句话，最后点「提交」生成修改单。
