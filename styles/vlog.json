@@ -6,7 +6,7 @@
   1080,
   1920
  ],
- "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；城市电影感用竖排细宋城市名；拼贴清单开场用卡通手写体和每刀换色的店名；不调色、不加颗粒，保留原片色调。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
+ "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；城市电影感用竖排细宋城市名；拼贴清单开场用窄粗的卡通字（Chicle，接近原片的 WeLcome TO native）和每刀换色的店名，可选电影感调色（look: cinematic，不加颗粒）。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
  "tokens": {
   "white": "#FFFFFF",
   "ink": "#141414",
@@ -46,6 +46,7 @@
    "C:/Windows/Fonts/simsun.ttc"
   ],
   "cartoon": [
+   "fonts/Chicle-Regular.ttf",
    "/System/Library/Fonts/Supplemental/ChalkboardSE.ttc#1",
    "/System/Library/Fonts/Supplemental/Chalkboard.ttc#0",
    "/System/Library/Fonts/Supplemental/MarkerFelt.ttc#0",
@@ -120,7 +121,7 @@
   },
   "list_word": {
    "font": "cartoon",
-   "size": 0.046,
+   "size": 0.07,
    "fill": "white",
    "stroke": 0,
    "shadow": true,
@@ -128,20 +129,21 @@
   },
   "list_place": {
    "font": "cartoon",
-   "size": 0.058,
+   "size": 0.085,
    "fill": "list_1",
-   "stroke": 0.002,
+   "stroke": 0.003,
    "stroke_color": "ink",
    "shadow": true,
    "cjk_font": "subtitle"
   },
   "collage_city": {
    "font": "cartoon",
-   "size": 0.068,
-   "fill": "white",
-   "stroke": 0,
+   "size": 0.095,
+   "fill": "list_1",
+   "stroke": 0.003,
    "shadow": true,
-   "cjk_font": "subtitle"
+   "cjk_font": "subtitle",
+   "stroke_color": "ink"
   },
   "card_title": {
    "font": "cartoon",

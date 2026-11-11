@@ -20,7 +20,7 @@ try:
     import numpy as np, cv2
 except ImportError:
     raise SystemExit("缺 numpy / opencv：运行技能目录里的 install.sh（Windows：install.ps1）装好再用版式模板。")
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # 插件里的复制品在 <here>/library；仓库里的正本在仓库根目录
@@ -248,7 +248,7 @@ class Content:
         ext = os.path.splitext(self.src)[1].lower()
         self.is_img = ext in (".png", ".jpg", ".jpeg", ".webp")
         if self.is_img:
-            self.img = np.array(Image.open(self.src).convert("RGB"))
+            self.img = np.array(ImageOps.exif_transpose(Image.open(self.src)).convert("RGB"))
         else:
             self.cap = cv2.VideoCapture(self.src)
             self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
@@ -642,17 +642,18 @@ class Renderer:
                 continue
             self.layer(canvas, L, t, lt, dur, shot, content, al)
 
-    def sticker(self, j, px):
+    def sticker(self, j, px, aspect=None):
         """第 j 张贴纸，最长边 px 像素 → RGBA。
-        cut: alpha 用图片自己的透明通道（抠好的 PNG）/ person 自动抠人（MediaPipe）/ card（默认）白边照片卡，微微歪一点。
-        不是 card 的都加一圈白描边，像贴纸。"""
-        k = (j, px)
+        cut: alpha 用图片自己的透明通道（抠好的 PNG）/ person 自动抠人（MediaPipe）/ card（默认）白边照片卡。
+        aspect（宽/高，如 0.75 = 3:4 竖版）：照片卡先居中裁成这个比例，横图也裁成竖的，每张一样大。
+        照片卡默认不歪（tilt 0）；要歪就在贴纸上写 tilt。不是 card 的都加一圈白描边，像贴纸。"""
+        k = (j, px, aspect)
         if k in self._stk:
             return self._stk[k]
         sp = self.stickers[j]
         src = os.path.join(self.base, os.path.expanduser(sp["src"]))
         if os.path.splitext(src)[1].lower() in (".png", ".jpg", ".jpeg", ".webp"):
-            im = np.array(Image.open(src).convert("RGBA"))
+            im = np.array(ImageOps.exif_transpose(Image.open(src)).convert("RGBA"))  # 手机竖拍的照片按 EXIF 转正
         else:
             cap = cv2.VideoCapture(src)
             cap.set(cv2.CAP_PROP_POS_MSEC, sp.get("t", 0) * 1000)
@@ -666,6 +667,19 @@ class Renderer:
             x, y, cw, ch = sp["crop"]
             im = im[int(y * h):int((y + ch) * h), int(x * w):int((x + cw) * w)]
         cut = sp.get("cut") or ("alpha" if im[..., 3].min() < 250 else "card")
+        aspect = sp.get("aspect", aspect)
+        if cut == "card" and aspect:
+            h, w = im.shape[:2]
+            fx = sp.get("focus", 0.5)  # 横向裁切的中心（0 左 1 右）
+            fx = fx[0] if isinstance(fx, (list, tuple)) else fx
+            if w / h > aspect:
+                nw = int(h * aspect)
+                x0 = int(np.clip(fx * w - nw / 2, 0, w - nw))
+                im = im[:, x0:x0 + nw]
+            else:
+                nh = int(w / aspect)
+                y0 = (h - nh) // 2
+                im = im[y0:y0 + nh]
         h, w = im.shape[:2]
         s = px / max(h, w)
         im = cv2.resize(im, (max(1, int(w * s)), max(1, int(h * s))), interpolation=cv2.INTER_AREA)
@@ -694,7 +708,7 @@ class Renderer:
         body = np.zeros((H_, W_, 3), np.float32)
         body[pad:pad + h, pad:pad + w] = rgb
         out[..., :3] = body * inner[..., None] + out[..., :3] * (1 - inner[..., None])
-        tilt = sp.get("tilt", ((j * 37) % 13 - 6) if cut == "card" else 0)  # 卡片默认歪 -6°～6°
+        tilt = sp.get("tilt", 0)
         if tilt:
             M = cv2.getRotationMatrix2D((W_ / 2, H_ / 2), tilt, 1.0)
             out = cv2.warpAffine(out, M, (W_, H_), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0, 0))
@@ -852,17 +866,17 @@ class Renderer:
                     blend(canvas, solid(th, tw, col), ox, oy, big, alpha)
             blend(canvas, img, ox, oy, mm, alpha)
         elif slot == "stickers":
-            # 定格拼贴：贴纸按 fps 一张张「啪」地贴到底板上（默认 12 张每秒，像定格动画），最后一张停到镜头结束
+            # 定格拼贴：贴纸按 fps 一张张「啪」地贴到底板上（默认 12 张每秒；编排可在镜头上写 sticker_fps 按拍子走），最后一张停到镜头结束
             n = len(self.stickers)
             if not n:
                 return
-            fps = L.get("fps", 12)
-            k = min(int(lt * fps), n - 1)
+            fps = shot.get("sticker_fps") or L.get("fps", 12)  # 编排可以按拍子定速度（如每拍 2 张）
+            k = min(int(lt * fps + 1e-6), n - 1)
             spots = L["spots"]
             for j in (range(k + 1) if L.get("stack") else [k]):
                 cx, cy, size = spots[j % len(spots)]
                 size *= self.stickers[j].get("scale", 1.0)
-                rgba = self.sticker(j, int(size * S.W))
+                rgba = self.sticker(j, int(size * S.W), L.get("aspect"))
                 u = (lt - j / fps) * fps  # 刚贴上那一帧大一点，像拍上去
                 put_text(canvas, rgba, int(cx * S.W), int(cy * S.H), "center", alpha, 1.1 if u < 1 else 1.0)
         elif slot == "panel":
@@ -935,11 +949,32 @@ class Renderer:
         return self.grade(self._frame(t), t)
 
     def grade(self, im, t):
-        """风格的调色（look）：暖一点、黑位提一点、饱和度、暗角、胶片颗粒。只在风格或任务里写了才做。"""
+        """风格的调色（look）：暖一点、黑位提一点、饱和度、暗角、胶片颗粒。只在风格或任务里写了才做。
+        电影感（look: {"preset": "cinematic"} 或单独写）：
+          contrast  S 曲线对比（0.0–0.4）
+          split     [暗部偏青, 亮部偏橙]（各 0–0.12），按亮度分开染色 = 常说的青橙
+          rolloff   高光柔和压下来，不死白（0–0.3）
+        """
         L = self.look
         if not L:
             return im
+        if L.get("preset") == "cinematic":
+            L = dict({"contrast": 0.32, "split": [0.13, 0.09], "rolloff": 0.2, "lift": 0.03, "warm": 0.02, "sat": 0.84, "vignette": 0.3}, **L)
         x = im.astype(np.float32) / 255
+        if L.get("rolloff"):
+            r = L["rolloff"]  # 0.75 以上的高光往下压，曲线平滑接上
+            k = 0.75
+            hi = x > k
+            x = np.where(hi, k + (1 - k) * np.tanh((x - k) / (1 - k) * (1 + r)) / np.tanh(1 + r) * (1 - r * 0.25), x)
+        if L.get("contrast"):
+            c = L["contrast"]
+            x = x + c * (x - 0.5) * (1 - np.abs(2 * x - 1))  # 中间调拉开，两端不硬切
+        if L.get("split"):
+            sh_, hl_ = L["split"]
+            lum = (0.299 * x[..., 0] + 0.587 * x[..., 1] + 0.114 * x[..., 2])[..., None]
+            ws = np.clip(1 - lum / 0.55, 0, 1) ** 1.5  # 暗部权重
+            wh = np.clip((lum - 0.45) / 0.55, 0, 1) * np.clip((0.97 - lum) / 0.12, 0, 1)  # 亮部权重，纯白（字）不染
+            x = x + ws * sh_ * np.array([-0.8, 0.15, 0.65], np.float32) + wh * hl_ * np.array([0.7, 0.2, -0.6], np.float32)
         if L.get("lift"):
             x = L["lift"] + x * (1 - L["lift"])
         if L.get("warm"):
