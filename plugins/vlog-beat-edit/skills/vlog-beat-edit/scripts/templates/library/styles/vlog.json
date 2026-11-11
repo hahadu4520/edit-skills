@@ -121,7 +121,7 @@
   },
   "list_word": {
    "font": "cartoon",
-   "size": 0.046,
+   "size": 0.07,
    "fill": "white",
    "stroke": 0,
    "shadow": true,
@@ -129,20 +129,21 @@
   },
   "list_place": {
    "font": "cartoon",
-   "size": 0.058,
+   "size": 0.085,
    "fill": "list_1",
-   "stroke": 0.002,
+   "stroke": 0.003,
    "stroke_color": "ink",
    "shadow": true,
    "cjk_font": "subtitle"
   },
   "collage_city": {
    "font": "cartoon",
-   "size": 0.068,
-   "fill": "white",
-   "stroke": 0,
+   "size": 0.095,
+   "fill": "list_1",
+   "stroke": 0.003,
    "shadow": true,
-   "cjk_font": "subtitle"
+   "cjk_font": "subtitle",
+   "stroke_color": "ink"
   },
   "card_title": {
    "font": "cartoon",

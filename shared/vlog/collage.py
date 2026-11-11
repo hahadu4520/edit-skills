@@ -44,7 +44,8 @@ for p in (HERE, os.path.join(HERE, "..", "music")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-STICKER_FPS = 12
+STICKERS_PER_BEAT = 2  # 贴纸每拍换几张（八分音符）
+MAX_STICKERS = 12  # 拼贴最多几张，约 6 拍
 LIST_COLORS = ["list_1", "list_2", "list_3", "list_4", "list_5", "list_6", "list_7"]
 SECS = {"wide": 2.0, "medium": 1.6, "close": 1.4, "detail": 1.2}  # 正片每刀默认秒数（按内容切，不卡拍）
 EST = ("sign", "street")  # 一站开头用来交代地方的
@@ -76,14 +77,14 @@ def shot_len(c):
 
 
 def list_beats(n):
-    """清单 n 刀的拍数：从 1.5 拍按比例缩到 1/3 拍（越切越快），总长补到整拍（最后一刀落在拍上冲进正片）。"""
+    """清单 n 刀的拍数：前两刀 2 拍、1.5 拍，之后每刀 1 拍（越切越快，但每刀至少 1 拍，字看得清），
+    总长补到整拍（最后一刀落在拍上冲进正片）。原片 124 BPM 是 1、1、½、½…，du 看了说太快读不清，所以放慢一倍。"""
     if n <= 0:
         return []
     if n == 1:
         return [2]
-    r = (1 / 3 / 1.5) ** (1 / (n - 1))
-    b = [round(1.5 * r ** k * 12) / 12 for k in range(n)]
-    b[-1] = 1 / 3
+    b = [2, 1.5] + [1] * (n - 2)
+    b = b[:n]
     pad = math.ceil(sum(b) - 1e-6) - sum(b)
     b[0] += pad
     return [round(x, 3) for x in b]
@@ -189,10 +190,17 @@ def to_job(spec, A, bpm, music):
     pi = add(A["plate"])
     shots.append({"template": "vlog-collage-title", "beats": 2, "content": pi, "role": "标题",
                   "why": "定格底板，Welcome / to / 地名 每半拍跳一个词（前奏）"})
-    n = len(A["stickers"])
-    sb = max(2, math.ceil((n / STICKER_FPS + 0.5 * beat) / beat))
-    shots.append({"template": "vlog-collage", "beats": sb, "content": pi, "on_drop": True, "role": "拼贴",
-                  "why": f"落点进鼓：同一张底板上 {n} 张贴纸 12 张每秒贴上来" + ("，先物后人，最后一张是自己" if any(x.get("cut") == "person" for x in A["stickers"]) else "")})
+    # 贴纸跟着八分音符走：每拍 2 张（原片 124 BPM ≈ 每秒 4 张），最多 MAX_STICKERS 张，多了均匀抽，最后一张（自己）一定留
+    st = A["stickers"]
+    if len(st) > MAX_STICKERS:
+        idx = [round(k * (len(st) - 2) / (MAX_STICKERS - 2)) for k in range(MAX_STICKERS - 1)] + [len(st) - 1]
+        st = [st[k] for k in idx]
+    A["stickers"] = st
+    n = len(st)
+    sfps = STICKERS_PER_BEAT / beat
+    sb = max(2, math.ceil(n / STICKERS_PER_BEAT + 1))  # 最后一张多停 1 拍
+    shots.append({"template": "vlog-collage", "beats": sb, "content": pi, "on_drop": True, "role": "拼贴", "sticker_fps": round(sfps, 4),
+                  "why": f"落点进鼓：同一张底板、同一个位置，{n} 张贴纸每拍 2 张换上来" + ("，先物后人，最后一张是自己" if any(x.get("cut") == "person" for x in A["stickers"]) else "")})
     lb = list_beats(len(A["list"]))
     for k, (c, b) in enumerate(zip(A["list"], lb)):
         ci = add(c)

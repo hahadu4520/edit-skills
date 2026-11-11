@@ -55,7 +55,7 @@ ins 感 vlog（`styles/vlog.json`，技能是 `vlog-beat-edit`）的镜头模板
 | `opening-slant` | 斜切开场 | 斜切分屏（2 句）→ 宽银幕框（2 句）→ 虚线抠像 | 标题 `hook`；1–3 段素材 |
 | `opening-pullback` | 全屏收圆窗开场 | 全屏人像（2 句）→ 虚化圆窗（1 句）→ 换素材铺满（1 句）→ 三明治竖排 | 标题 `hook`；1–2 段素材 |
 | `opening-vlog-beat` | ins 感卡点开场 | 钩子（4 拍，配乐前奏）→ 落点进鼓，每半拍硬切（8 拍）→ 衬线大标题压住、底下继续每半拍换（8 拍）→ 结尾重音落在收尾镜头（4 拍） | 配乐 + 节拍表；`tag_l` `tag_r` `title` `note` `sub`；钩子 1 段 + 快切 8–16 段 + 收尾 1 段 |
-| `collage-list` | 拼贴清单开场（编排） | 底板逐词标题（2 拍）→ 落点进鼓、定格拼贴 12 张每秒 → 地点清单一店一刀、越切越快 → 正片按时间线不卡拍 → 致谢卡；镜头由 `shared/vlog/collage.py` 按素材标签现排 | 素材表（地点、主体、景别 + list / screen / photo / group）；`hello` `to` `city` `thanks` `memo` |
+| `collage-list` | 拼贴清单开场（编排） | 底板逐词标题（2 拍）→ 落点进鼓、定格拼贴每拍 2 张、同一位置 → 地点清单一店一刀、越切越快 → 正片按时间线不卡拍 → 致谢卡；镜头由 `shared/vlog/collage.py` 按素材标签现排 | 素材表（地点、主体、景别 + list / screen / photo / group）；`hello` `to` `city` `thanks` `memo` |
 | `opening-vlog-behind` | 字在人后开场 | 钩子（4 拍）→ 落点上超大衬线字压在人身后（4 拍）→ 每半拍快切（8 拍）→ 衬线标题每拍换（4 拍）→ 收尾（4 拍） | 同上，加 `big`；第 2 段素材要有人站在画面中间 |
 
 元件模板（字幕样式、花字样式、标题样式）现在放在风格文件的 `text` 一节里，模板按名字引用；以后多了再拆出来。

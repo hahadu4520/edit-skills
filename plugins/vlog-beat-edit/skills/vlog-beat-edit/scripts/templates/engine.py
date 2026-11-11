@@ -866,12 +866,12 @@ class Renderer:
                     blend(canvas, solid(th, tw, col), ox, oy, big, alpha)
             blend(canvas, img, ox, oy, mm, alpha)
         elif slot == "stickers":
-            # 定格拼贴：贴纸按 fps 一张张「啪」地贴到底板上（默认 12 张每秒，像定格动画），最后一张停到镜头结束
+            # 定格拼贴：贴纸按 fps 一张张「啪」地贴到底板上（默认 12 张每秒；编排可在镜头上写 sticker_fps 按拍子走），最后一张停到镜头结束
             n = len(self.stickers)
             if not n:
                 return
-            fps = L.get("fps", 12)
-            k = min(int(lt * fps), n - 1)
+            fps = shot.get("sticker_fps") or L.get("fps", 12)  # 编排可以按拍子定速度（如每拍 2 张）
+            k = min(int(lt * fps + 1e-6), n - 1)
             spots = L["spots"]
             for j in (range(k + 1) if L.get("stack") else [k]):
                 cx, cy, size = spots[j % len(spots)]
