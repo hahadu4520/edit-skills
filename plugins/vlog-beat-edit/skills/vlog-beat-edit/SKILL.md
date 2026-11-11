@@ -44,11 +44,14 @@ description: 「vlog 卡点剪辑」按配乐拍子剪 ins 感 vlog 开头：钩
 ```bash
 # 合成一段免版权配乐：house（ins 快节奏卡点，默认 122 BPM）/ lofi（日常慢 vlog，86）/ pop（明亮旅行，128）
 python <SKILL>/scripts/templates/beatgen.py house <workdir>/music.wav
+# 法式（116 BPM，手风琴旋律 + 吉他 la pompe + 低音提琴 + 鼓刷）：--mood nostalgic 小调怀旧 / bright 大调明亮，换 --seed 换一句旋律
+python <SKILL>/scripts/templates/beatgen.py french <workdir>/music.wav --mood nostalgic --seed 3
 # 现成的歌（剪映曲库、买的版权音乐）：测出节拍表，只取开头要用的那一段
 python <SKILL>/scripts/templates/beats.py <歌.mp3> --start <从哪秒开始> --dur 15 --out <workdir>/music.beats.json
 ```
 
-- 合成的配乐音色比较基础，要跟用户说清楚；正片建议用曲库的歌。
+- **先填配乐简报**：看素材关键帧，按维度表「14 配乐与卡点」里的律动、调式与和声、配器、旋律、质感、人声各选一个值，跟用户确认一句（比如「巴黎秋天、偏怀旧 → french nostalgic」），再生成或挑歌。
+- 合成的配乐音色比较基础，要跟用户说清楚；正片建议用曲库的歌。旋律不满意就换 `--seed`，一次出 2–3 个给用户挑。
 - 测出来的 BPM 和落点，先抽查：落点那一拍是不是鼓真正进来的地方。不对就用 `--drop <秒>` 指定，知道 BPM 就用 `--bpm` 指定。
 - 用别人的歌要提醒用户确认版权。
 

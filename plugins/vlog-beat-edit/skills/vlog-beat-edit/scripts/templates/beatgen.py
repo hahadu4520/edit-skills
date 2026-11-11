@@ -9,6 +9,8 @@
     house   ins 感快节奏卡点（默认 122 BPM）：前奏铺底 + 上扬 → 落点进鼓 → 结尾一下重音收住
     lofi    日常慢 vlog（默认 86 BPM）：电钢琴 + 黑胶底噪 + 松弛的鼓
     pop     明亮流行（默认 128 BPM）：拍手 + 合成器拨弦，适合旅行快剪
+    french  法式（默认 116 BPM）：手风琴旋律 + 吉他 la pompe 扫弦 + 低音提琴 + 鼓刷，有旋律（melody.py 按乐理规则生成）；
+            --mood nostalgic（D 小调，怀旧）/ bright（F 大调，明亮）；换 --seed 就换一句旋律
   --intro / --drop / --outro 是小节数（4 拍一小节）。开头模板一般 intro 1 小节（钩子）、drop 4 小节（快切 + 标题）。
 
 输出：<out.wav>（44.1kHz 立体声）和 <out>.beats.json：
@@ -30,7 +32,7 @@ PROG = {
     "lofi": [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]],      # ii7 V7 Imaj7 vi7
     "pop": [[0, 4, 7, 12], [7, 11, 14, 19], [9, 12, 16, 21], [5, 9, 12, 17]],      # I V vi IV
 }
-DEFAULT_BPM = {"house": 122, "lofi": 86, "pop": 128}
+DEFAULT_BPM = {"house": 122, "lofi": 86, "pop": 128, "french": 116}
 
 
 def hz(semi):  # semi 相对 A4=440
@@ -337,7 +339,7 @@ def save_wav(path, x):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("preset", choices=sorted(PROG))
+    ap.add_argument("preset", choices=sorted(PROG) + ["french"])
     ap.add_argument("out")
     ap.add_argument("--bpm", type=float)
     ap.add_argument("--intro", type=int, default=1)
@@ -345,9 +347,16 @@ def main():
     ap.add_argument("--outro", type=int, default=1)
     ap.add_argument("--key", default="C")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--mood", default="nostalgic", help="french 用：nostalgic / bright")
     a = ap.parse_args()
     bpm = a.bpm or DEFAULT_BPM[a.preset]
-    mix, meta = build(a.preset, bpm, a.intro, a.drop, a.outro, a.key, a.seed)
+    if a.preset == "french":
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import french
+        mix, meta = french.build(a.mood, bpm, a.intro, a.drop, a.outro, a.seed)
+    else:
+        mix, meta = build(a.preset, bpm, a.intro, a.drop, a.outro, a.key, a.seed)
     save_wav(a.out, mix)
     jp = os.path.splitext(a.out)[0] + ".beats.json"
     with open(jp, "w", encoding="utf-8") as f:
