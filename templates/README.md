@@ -121,7 +121,7 @@ vlog 卡点开头的任务文件不用口播原片，换成配乐：
   "music": { "src": "house.wav", "beats": "house.beats.json", "start": "auto" },  // auto：按落点对齐；也可以写歌里的秒数
   "content": [{ "src": "hook.mp4" }, { "src": "c01.mp4", "start": 1.2 }, …, { "src": "selfie.mp4", "crop": [0, 0, 1, 0.75] }],
   "titles": { "tag_l": "atmosphere.daily", "tag_r": "in shanghai", "title": "Thailand", "note": "*july 2026 Record\nby du", "sub": "laid-back vibe" },
-  "look": { "grain": 0.04 }      // 可选：覆盖风格的调色
+  "look": { "grain": 0.04 }      // 可选：调色（vlog 默认不调）
 }
 ```
 

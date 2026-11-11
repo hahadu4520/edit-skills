@@ -30,6 +30,6 @@ PY
   echo "已同步 → $d（风格 $style）"
 done
 # 配乐与卡点（维度 14）：只给 vlog 卡点剪辑
-cp shared/music/beatgen.py shared/music/beats.py plugins/vlog-beat-edit/skills/vlog-beat-edit/scripts/templates/
+cp shared/music/*.py shared/vlog/*.py plugins/vlog-beat-edit/skills/vlog-beat-edit/scripts/templates/
 rm -f plugins/koubo-edit/skills/koubo-edit/scripts/templates/beatgen.py plugins/koubo-edit/skills/koubo-edit/scripts/templates/beats.py
 echo "已同步 → 配乐工具"

@@ -1,0 +1,50 @@
+{
+ "id": "vlog-city-name",
+ "name": "竖排城市名",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "素材铺满，画面正中一行竖排细宋体城市名，底下一行很小的拼音或英文。开场第一个镜头淡入，压到第二个镜头开头再淡出（第二个镜头用 vlog-city-name-out）。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容",
+  "11 布景、配色与字体": "原片色调，不调色",
+  "9 动效与花字": "竖排细宋城市名 + 小字英文，淡入",
+  "14 配乐与卡点": "开场第一个镜头，前奏里"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "city",
+   "anchor": [
+    0.5,
+    0.44
+   ],
+   "text_style": "city_cn",
+   "enter": "fade",
+   "enter_dur": 0.5,
+   "at_beat": 0.25
+  },
+  {
+   "slot": "title",
+   "key": "city_en",
+   "anchor": [
+    0.5,
+    0.515
+   ],
+   "text_style": "city_en",
+   "enter": "fade",
+   "enter_dur": 0.5,
+   "at_beat": 0.5
+  }
+ ]
+}

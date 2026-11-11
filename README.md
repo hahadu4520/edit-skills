@@ -11,7 +11,7 @@
 | 朴素版口播 | `koubo-edit` | 真人口播，想快速出一条干净的成片 | 粗剪去停顿口误、整条字幕（可中英双语）、花字和编号清单、限流词哔声打码、3 版 3:4 封面 |
 | 像素风剪辑 | `pixel-edit` | 讲概念的口播，想加有记忆点的画面 | 星露谷式像素 B-roll、像素 Agent 界面卡片、3:4 竖版 + 16:9 双语横版、各平台封面 |
 | 横版课程剪辑 | `course-landscape-edit` | 讲课、教程，带操作录屏和提示词 | 16:9 课程视频：左课件/录屏/动效卡 + 右人像小窗、开场效果对比、顶部章节进度条、中英双语字幕 |
-| vlog 卡点剪辑（△ 试用） | `vlog-beat-edit` | 旅行、日常的手机素材，想要 ins 感快剪开头 | 9:16 vlog 开头：钩子停在前奏、落点后每半拍硬切、细衬线英文大标题（可字在人后）、暖调颗粒；配乐现场合成或用你的歌测节拍 |
+| vlog 卡点剪辑（△ 试用） | `vlog-beat-edit` | 旅行、日常的手机素材，想要 ins 感快剪开头 | 9:16 vlog 开头：钩子停在前奏、落点后每半拍硬切、细衬线英文大标题（可字在人后）、原片色调；配乐现场合成或用你的歌测节拍。另有「城市电影感」模板：按素材之间的关系排一座城市的风景人文 |
 
 每个风格的样片截图和详细说明，见各自目录里的 README：[koubo-edit](plugins/koubo-edit/skills/koubo-edit/README.md) · [pixel-edit](plugins/pixel-edit/skills/pixel-edit/README.md) · [course-landscape-edit](plugins/course-landscape-edit/skills/course-landscape-edit/README.md) · [vlog-beat-edit](plugins/vlog-beat-edit/skills/vlog-beat-edit/README.md)。
 
