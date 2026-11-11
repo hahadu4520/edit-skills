@@ -50,33 +50,35 @@ def damp(x, keep):
     return x * np.where(t < keep, 1.0, np.exp(-(t - keep) * 60))
 
 
-def accordion(f, secs, vel=1.0, detune=0.0045, seed=0):
-    """手风琴：三片簧片（中间准、两边各偏一点）叠在一起，簧片音色用谐波相加；两边偏的那一点就是 musette 颤音。"""
+def accordion(f, secs, vel=1.0, detune=0.0016, seed=0):
+    """手风琴（柔和版）：三片簧片叠在一起，两边各偏一点点，产生慢慢的颤音；
+    高次谐波衰减得快、2.6kHz 以上收掉，避免簧片那种「扎耳朵」的嗡嗡声。"""
     n = int(secs * SR)
     t = np.arange(n) / SR
     rng = np.random.default_rng(seed)
+    vib = 1 + 0.0025 * np.sin(2 * np.pi * 5.2 * t) * np.clip((t - 0.25) / 0.3, 0, 1)  # 长音后面才出来的轻颤
+    ph = 2 * np.pi * np.cumsum(vib) / SR
     x = np.zeros(n)
-    for k, dt in enumerate((-detune, 0.0, detune)):
+    for dt, g in ((-detune, 0.8), (0.0, 1.0), (detune, 0.8)):
         ff = f * (1 + dt)
-        for h in range(1, 13):
-            if ff * h > 9000:
+        for h in range(1, 9):
+            if ff * h > 4000:
                 break
-            amp = (1 / h) ** 0.75 * (1.15 if h % 2 else 0.85)
-            x += amp * np.sin(2 * np.pi * ff * h * t + rng.uniform(0, 2 * np.pi))
-    # 低八度的一片，声音更厚
-    for h in range(1, 7):
-        x += 0.18 * (1 / h) * np.sin(2 * np.pi * f / 2 * h * t + rng.uniform(0, 2 * np.pi))
-    x /= 6
-    a, r = 0.025, 0.07
+            amp = g * (1 / h) ** 1.4
+            x += amp * np.sin(ff * h * ph + rng.uniform(0, 2 * np.pi))
+    for h in range(1, 4):  # 低八度的一片，声音更暖
+        x += 0.22 * (1 / h) * np.sin(f / 2 * h * ph + rng.uniform(0, 2 * np.pi))
+    x /= 3.2
+    a, r = 0.045, 0.12
     e = np.clip(t / a, 0, 1) * np.clip((secs - t) / r, 0, 1)
-    e *= 1 + 0.06 * np.sin(2 * np.pi * 0.8 * t)  # 风箱的轻微起伏
-    return B.hp(B.lp(x * e, 5200), 140) * vel
+    e *= 1 + 0.05 * np.sin(2 * np.pi * 0.7 * t)  # 风箱的轻微起伏
+    return B.hp(B.lp(x * e, 2600), 150) * vel
 
 
 def brush(rng, secs=0.22):
     n = int(secs * SR)
     t = np.arange(n) / SR
-    x = B.bp(rng.normal(0, 1, n), 1800, 9000)
+    x = B.bp(rng.normal(0, 1, n), 1500, 6000)
     e = np.clip(t / 0.02, 0, 1) * np.exp(-t * 14)
     return x * e * 0.35
 
@@ -100,15 +102,11 @@ def build(mood, bpm, intro, drop, outro, seed, key=None):
         frac = k % 1
         return b * bar + (k + (swing * 0.5 if abs(frac - 0.5) < 1e-6 else 0)) * beat
 
-    # 旋律：落点之后的每 4 小节编一句，第二句用新的 seed 但从第一句结尾的音接着走
-    notes = []
-    prev = None
-    for p0 in range(intro, intro + drop, 4):
-        nb = min(4, intro + drop - p0)
-        ch = [chords[(p0 - intro + i) % len(chords)] for i in range(nb)]
-        ph = M.phrase(ch, key, P["scale"], seed=seed * 7 + p0, start=prev, swing=swing)
-        notes += [(p0 * 4 + o, d, m, v) for (o, d, m, v) in ph]
-        prev = ph[-1][2]
+    # 旋律：整个落点段编成一段（8 小节以上是问句 + 答句），melody.song 的写法见那边的说明
+    ch = [chords[i % len(chords)] for i in range(drop)]
+    notes = [(intro * 4 + o, d, m, v) for (o, d, m, v) in M.song(ch, key, P["scale"], seed=seed)]
+    # 摇摆：反拍八分音符稍微往后
+    notes = [(o + swing * 0.5, d - swing * 0.5, m, v) if abs(o % 1 - 0.5) < 1e-6 else (o, d, m, v) for (o, d, m, v) in notes]
     # 前奏最后两拍：顺着第一个和弦往上走的弱起，把人带进落点
     if intro and notes:
         first = notes[0][2]
@@ -127,11 +125,8 @@ def build(mood, bpm, intro, drop, outro, seed, key=None):
     for (o, d, m, v) in notes:
         b, k = divmod(o, 4)
         t0 = at(int(b), k)
-        x = accordion(M.midi_hz(m), d * beat * 0.96, v, seed=int(m))
-        B.place(lead, x, t0, 0.55, pan=0.05)
-        if d >= 1 and rng.random() < 0.5:  # 长音前加一个半音下方的倚音，手风琴常用的装饰
-            g = accordion(M.midi_hz(m - 1), 0.06, 0.6, seed=int(m) + 1)
-            B.place(lead, g, t0 - 0.06, 0.45, pan=0.05)
+        x = accordion(M.midi_hz(m), d * beat * 0.98 + 0.08, v, seed=int(m))
+        B.place(lead, x, t0, 0.5, pan=0.05)
 
     for b in range(bars):
         ch = chords[(b - intro) % len(chords)]
@@ -154,7 +149,7 @@ def build(mood, bpm, intro, drop, outro, seed, key=None):
             t0 = at(b, k)
             chop = k in (1, 3)
             for i, m in enumerate(voicing):
-                s = ks(M.midi_hz(m), 0.4, 0.995, 0.65 if chop else 0.5, seed=b * 16 + k * 4 + i)
+                s = ks(M.midi_hz(m), 0.4, 0.995, 0.45 if chop else 0.35, seed=b * 16 + k * 4 + i)
                 s = damp(s, 0.07 if chop else 0.16)
                 B.place(gtr, s, t0 + i * 0.007, 0.34 if chop else 0.26, pan=-0.3)
             if not chop:  # 低音提琴：1 拍根音，3 拍五度
@@ -164,13 +159,13 @@ def build(mood, bpm, intro, drop, outro, seed, key=None):
                 B.place(drums, brush(rng), t0, 0.6, pan=0.3)
         # 鼓刷在八分音符上轻轻擦
         for k in range(8):
-            B.place(drums, brush(rng, 0.12), at(b, k / 2), 0.18, pan=0.3)
+            B.place(drums, brush(rng, 0.12), at(b, k / 2), 0.1, pan=0.3)
 
     lead = B.reverb(lead, 1.1, 0.2)
     pad = B.reverb(pad, 1.4, 0.3)
     gtr = B.reverb(gtr, 0.8, 0.15)
     mix = lead * 1.0 + pad * 1.0 + gtr * 1.0 + bass * 1.6 + drums * 0.6
-    mix = np.tanh(mix * 1.2) / np.tanh(1.2)
+    mix = np.tanh(mix * 0.8) / np.tanh(0.8)  # 只轻轻压一下，压狠了会多出刺耳的谐波
     mix /= max(1e-6, np.abs(mix).max()) / 0.89
     fade = int(1.2 * SR)
     mix[-fade:] *= np.linspace(1, 0, fade)[:, None]

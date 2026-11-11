@@ -154,3 +154,87 @@ def chord_midi(name, key, lo=48):
 
 def midi_hz(m):
     return 440.0 * 2 ** ((m - 69) / 12)
+
+
+# ---------------------------------------------------------------- 好唱的写法
+# phrase() 每小节都现编，听起来像在乱走。song() 换成流行歌、香颂常用的写法：
+# 一个节奏 + 一个音型（动机）定下来以后，前三小节反复用它，只是搬到每个和弦上；
+# 第 4 小节往下级进落到长音。8 小节是「问句 + 答句」：答句前两小节原样重复问句，
+# 问句停在和弦的三音/五音（没说完），答句停在主音（说完了）。音域压在一个八度左右，几乎全是级进。
+SING_RHYTHMS = [[1.5, .5, 1, 1], [1, .5, .5, 2], [.5, .5, 1, 2], [1, 1, 1, 1], [1.5, .5, 2]]
+CADENCES = [[1.5, .5, 2], [1, 1, 2], [2, 2]]
+
+
+def _scale_notes(pcs, lo, hi):
+    return [m for m in range(lo, hi + 1) if m % 12 in pcs]
+
+
+def _walk(notes, m, k):
+    """在音阶音列表里从 m 走 k 级。"""
+    i = min(range(len(notes)), key=lambda j: abs(notes[j] - m))
+    return notes[max(0, min(len(notes) - 1, i + k))]
+
+
+def song(chords, key, scale="minor", seed=1, lo=62, hi=77):
+    """编一段 len(chords) 小节（4 或 8）的旋律。返回 [(拍, 时值, midi, 力度)]。"""
+    rng = np.random.default_rng(seed)
+    k = NOTE[key]
+    scale_pcs = [(k + s) % 12 for s in SCALES[scale]]
+    info = [parse_chord(c, k) for c in chords]
+    rh = SING_RHYTHMS[rng.integers(len(SING_RHYTHMS))]
+    cad = CADENCES[rng.integers(len(CADENCES))]
+    # 动机音型：相对第一个音走几级；一个小跳 + 级进，整体略往上
+    shapes = [[0, 1, 2, 1], [0, -1, 0, 2], [0, 1, 0, -1], [0, 2, 1, 0], [0, 1, 2, 4], [0, -1, -2, 0]]
+    shape = shapes[rng.integers(len(shapes))]
+    lift = [0, 1, 2, -1]  # 4 小节里每小节起音相对第一小节高几级：往上走到第 3 小节，再回落
+
+    def bar(b, start_hint, rhythm, shp):
+        root, cpcs = info[b]
+        pcs = allowed(scale_pcs, cpcs)
+        sn = _scale_notes(pcs, lo, hi)
+        first = near(cpcs, start_hint, lo, hi)
+        out, t, m = [], 0.0, first
+        for i, d in enumerate(rhythm):
+            m = _walk(sn, first, shp[i % len(shp)])
+            if t in (0.0, 2.0) or d >= 1.5:
+                m = near(cpcs, m, lo, hi)  # 强拍、长音一定是和弦音
+            out.append((b * 4 + t, d, m, 0.9 if t in (0.0, 2.0) else 0.72))
+            t += d
+        return out
+
+    def cadence(b, target):
+        root, cpcs = info[b]
+        sn = _scale_notes(allowed(scale_pcs, cpcs), lo, hi)
+        n = len(cad)
+        out, t = [], 0.0
+        for i, d in enumerate(cad):
+            m = target if i == n - 1 else _walk(sn, target, n - 1 - i)  # 从上往下级进落到目标音
+            out.append((b * 4 + t, d, m, 0.85))
+            t += d
+        return out
+
+    center = (lo + hi) // 2 - 2
+    sn_all = _scale_notes(scale_pcs, lo, hi)
+    notes = []
+    nb = len(chords)
+    for p0 in range(0, nb, 4):
+        answer = p0 > 0
+        for i in range(min(4, nb - p0)):
+            b = p0 + i
+            last = i == 3 or b == nb - 1
+            if last:
+                _, cpcs = info[b]
+                if answer or nb <= 4:
+                    tgt_pcs = [k] if k in cpcs else [info[b][0]]
+                else:
+                    tgt_pcs = [p for p in cpcs if p != k] or cpcs  # 问句停在不是主音的和弦音
+                target = near(tgt_pcs, center - 1, lo, hi)
+                notes += cadence(b, target)
+            elif answer and i < 2:
+                src = [n for n in notes if i * 4 <= n[0] < (i + 1) * 4]
+                notes += [(o + p0 * 4, d, m, v) for (o, d, m, v) in src]  # 答句开头原样重复
+            else:
+                hint = _walk(sn_all, center, lift[i])
+                shp = shape if not (answer and i == 2) else [-s for s in shape]  # 答句第 3 小节把音型倒过来
+                notes += bar(b, hint, rh, shp)
+    return notes
