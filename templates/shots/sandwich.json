@@ -1,0 +1,63 @@
+{
+ "id": "sandwich",
+ "name": "三明治竖排",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16"
+ ],
+ "layout_class": "内容 + 人像小窗",
+ "summary": "纸纹底，从上到下三层：素材卡片、一行宋体字幕、居中圆形人像，沿中轴对齐，留白多。",
+ "needs": [
+  "portrait",
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "上内容 / 中字幕 / 下圆窗",
+  "6 字幕": "画面正中，深色宋体",
+  "10 人像": "圆窗居中",
+  "11 布景": "纸纹底"
+ },
+ "background": {
+  "type": "paper"
+ },
+ "layers": [
+  {
+   "slot": "content",
+   "shape": "roundrect",
+   "box": [
+    0.08,
+    0.08,
+    0.84,
+    0.3
+   ],
+   "radius": 0.05,
+   "shadow": true
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.455
+   ],
+   "text_style": "subtitle_ink",
+   "enter": "type"
+  },
+  {
+   "slot": "portrait",
+   "shape": "circle",
+   "box": [
+    0.26,
+    0.52,
+    0.48,
+    null
+   ],
+   "face_width": 0.55,
+   "ring": {
+    "color": "white",
+    "width": 0.008
+   },
+   "shadow": true
+  }
+ ]
+}

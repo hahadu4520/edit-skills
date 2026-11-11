@@ -1,0 +1,42 @@
+{
+ "id": "opening-pullback",
+ "name": "全屏收圆窗开场",
+ "kind": "sequence",
+ "status": "△",
+ "summary": "全屏口播起手 → 背景虚化、人缩成圆窗 → 背景换成素材 → 收成三明治竖排。全程同一个人像块在形变，不硬切。",
+ "inputs": {
+  "titles": [
+   "hook"
+  ],
+  "content": "1–2 段素材"
+ },
+ "transition": {
+  "type": "morph",
+  "duration": 0.45
+ },
+ "shots": [
+  {
+   "template": "full-portrait",
+   "cues": 2,
+   "title": "hook"
+  },
+  {
+   "template": "blur-pip",
+   "cues": 1
+  },
+  {
+   "template": "blur-pip",
+   "cues": 1,
+   "content": 0,
+   "background": {
+    "type": "content",
+    "dim": 0.15
+   }
+  },
+  {
+   "template": "sandwich",
+   "cues": "rest",
+   "content": 1
+  }
+ ]
+}

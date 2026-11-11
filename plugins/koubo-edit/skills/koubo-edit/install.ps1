@@ -38,6 +38,12 @@ if ($LASTEXITCODE -ne 0) {
     # 国内网络连 pypi.org 常常很慢，自动换清华镜像
     & $VPy -m pip install -q --timeout 60 -i https://pypi.tuna.tsinghua.edu.cn/simple pillow jieba faster-whisper
 }
+# 开头版式模板（抠像、圆窗、形变转场）用的：失败不影响其他步骤
+& $VPy -m pip install -q --timeout 30 numpy opencv-python-headless mediapipe
+if ($LASTEXITCODE -ne 0) {
+    & $VPy -m pip install -q --timeout 60 -i https://pypi.tuna.tsinghua.edu.cn/simple numpy opencv-python-headless mediapipe
+    if ($LASTEXITCODE -ne 0) { Write-Host "⚠️  版式模板的依赖没装上，剪口播不受影响，要用开头模板时再装。" }
+}
 
 Write-Host "④ 预先下载转写模型（约 1.6GB，只需要一次）…"
 $DL = "from huggingface_hub import snapshot_download; snapshot_download('mobiuslabsgmbh/faster-whisper-large-v3-turbo')"

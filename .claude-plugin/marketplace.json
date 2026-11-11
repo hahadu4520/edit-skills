@@ -24,6 +24,12 @@
       "source": "./plugins/course-landscape-edit",
       "description": "横版课程剪辑：讲课口播剪成 16:9 课程视频，左课件/录屏/动效卡 + 右人像小窗 + 顶部章节进度条 + 中英双语字幕。",
       "version": "1.0.0"
+    },
+    {
+      "name": "vlog-beat-edit",
+      "source": "./plugins/vlog-beat-edit",
+      "description": "vlog 卡点剪辑：按配乐拍子剪 ins 感 vlog 开头，钩子停在前奏、落点后每半拍硬切、细衬线英文大标题（可压在人身后）；配乐可现场合成或用现成的歌测节拍。",
+      "version": "0.1.0"
     }
   ]
 }

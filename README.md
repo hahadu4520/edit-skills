@@ -2,7 +2,7 @@
 
 让 Claude Code、Codex 等 AI Agent 按固定风格帮你剪视频。每种剪辑风格是一个独立的技能，想用哪个装哪个。装好后**重启一次 Claude Code**，然后直接给它视频开剪：第一次用时它会自己检查并装好 ffmpeg、Python 环境和模型（约 5–15 分钟），不用你手动装依赖。
 
-**先看 [剪辑维度配置表](DIMENSIONS.md)**：它把一条剪辑拆成 13 个维度（排版、镜头、运镜、转场、字幕……），列出每个维度能改什么、怎么改。下面每个风格都是这张表里的一组取值，审片时也按维度定点修改。
+**先看 [剪辑维度配置表](DIMENSIONS.md)**：它把一条剪辑拆成 14 个维度（排版、镜头、运镜、转场、字幕、配乐卡点……），列出每个维度能改什么、怎么改。下面每个风格都是这张表里的一组取值，审片时也按维度定点修改。
 
 ## 包含哪些风格
 
@@ -11,8 +11,9 @@
 | 朴素版口播 | `koubo-edit` | 真人口播，想快速出一条干净的成片 | 粗剪去停顿口误、整条字幕（可中英双语）、花字和编号清单、限流词哔声打码、3 版 3:4 封面 |
 | 像素风剪辑 | `pixel-edit` | 讲概念的口播，想加有记忆点的画面 | 星露谷式像素 B-roll、像素 Agent 界面卡片、3:4 竖版 + 16:9 双语横版、各平台封面 |
 | 横版课程剪辑 | `course-landscape-edit` | 讲课、教程，带操作录屏和提示词 | 16:9 课程视频：左课件/录屏/动效卡 + 右人像小窗、开场效果对比、顶部章节进度条、中英双语字幕 |
+| vlog 卡点剪辑（△ 试用） | `vlog-beat-edit` | 旅行、日常的手机素材，想要 ins 感快剪开头 | 9:16 vlog 开头：钩子停在前奏、落点后每半拍硬切、细衬线英文大标题（可字在人后）、暖调颗粒；配乐现场合成或用你的歌测节拍 |
 
-每个风格的样片截图和详细说明，见各自目录里的 README：[koubo-edit](plugins/koubo-edit/skills/koubo-edit/README.md) · [pixel-edit](plugins/pixel-edit/skills/pixel-edit/README.md) · [course-landscape-edit](plugins/course-landscape-edit/skills/course-landscape-edit/README.md)。
+每个风格的样片截图和详细说明，见各自目录里的 README：[koubo-edit](plugins/koubo-edit/skills/koubo-edit/README.md) · [pixel-edit](plugins/pixel-edit/skills/pixel-edit/README.md) · [course-landscape-edit](plugins/course-landscape-edit/skills/course-landscape-edit/README.md) · [vlog-beat-edit](plugins/vlog-beat-edit/skills/vlog-beat-edit/README.md)。
 
 ## 安装
 
@@ -41,7 +42,7 @@ Windows（PowerShell，需要先装好 Git）：
 git clone https://github.com/hahadu4520/edit-skills.git "$HOME\.edit-skills"; powershell -ExecutionPolicy Bypass -File "$HOME\.edit-skills\install.ps1" koubo-edit
 ```
 
-把最后的 `koubo-edit` 换成上表里的其他插件名（`pixel-edit`、`course-landscape-edit`）就是装对应风格；要几个就各跑一次。不带风格名运行 `install.sh` 会列出所有可装的风格。之前从 koubo-edit 旧仓库装过的不用重装，旧仓库照常能用和更新。
+把最后的 `koubo-edit` 换成上表里的其他插件名（`pixel-edit`、`course-landscape-edit`、`vlog-beat-edit`）就是装对应风格；要几个就各跑一次。不带风格名运行 `install.sh` 会列出所有可装的风格。之前从 koubo-edit 旧仓库装过的不用重装，旧仓库照常能用和更新。
 
 更新：`cd ~/.edit-skills && git pull`。
 
@@ -64,6 +65,7 @@ plugins/
   koubo-edit/                          朴素版口播
   pixel-edit/                          像素风剪辑
   course-landscape-edit/               横版课程剪辑
+  vlog-beat-edit/                      vlog 卡点剪辑
     .claude-plugin/plugin.json         插件信息
     hooks/hooks.json                   每次打开 Claude Code 时自检依赖，缺了就提醒 Agent 先安装
     skills/course-landscape-edit/
@@ -73,11 +75,13 @@ plugins/
       scripts/                         样板片的完整剪辑工程，新片照着改
       fonts/  examples/                字体 / 样板片的时间轴和截图
 DIMENSIONS.md                          剪辑维度配置表：所有风格和审片台的总表
-shared/                                各风格共用的代码和资源（待抽取）
+templates/                             模板库：镜头模板、片段模板（如口播开头），说明见 templates/README.md
+styles/                                风格文件：每个风格的皮肤（颜色、字体）和开放的模板
+shared/                                各风格共用的代码：审片台 review/、版式模板渲染器 templates/、配乐与卡点 music/
 install.sh / install.ps1               非 Claude Code 的安装脚本：install.sh <插件名>
 ```
 
-三个风格的目录结构相同，都是 `plugins/<插件名>/skills/<插件名>/` 下放 SKILL.md、脚本和依赖脚本。
+每个风格的目录结构相同，都是 `plugins/<插件名>/skills/<插件名>/` 下放 SKILL.md、脚本和依赖脚本。
 
 加新风格：复制一个 `plugins/<风格>/` 目录，改 SKILL.md、plugin.json 和 check.sh 里要检查的依赖，在 marketplace.json 里加一行，README 的「包含哪些风格」表格和仓库结构各加一行，DIMENSIONS.md 的「风格组合」表加一列。**每个风格都必须带 check + install，SKILL.md 第 0 步先自检、缺了由 Agent 自己装**，不能把装依赖留给用户。
 

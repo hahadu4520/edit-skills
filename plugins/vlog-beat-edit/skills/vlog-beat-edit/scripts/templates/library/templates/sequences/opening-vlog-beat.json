@@ -1,0 +1,46 @@
+{
+ "id": "opening-vlog-beat",
+ "name": "ins 感卡点开场",
+ "kind": "sequence",
+ "status": "△",
+ "summary": "钩子停 4 拍（配乐前奏）→ 落点进鼓，素材每半拍硬切 8 拍 → 衬线大标题压住，底下继续每半拍换 8 拍 → 结尾重音落在最后一个镜头上，停 4 拍。",
+ "inputs": {
+  "titles": [
+   "tag_l",
+   "tag_r",
+   "title",
+   "note",
+   "sub"
+  ],
+  "content": "第 0 段是钩子（有表情的人、强反差的画面），后面 8–16 段快切素材，最后一段是收尾（人物自拍 / 回头）",
+  "music": "配乐 + 节拍表；前奏 1 小节、落点、再 4 小节，beatgen house 默认就是这个结构"
+ },
+ "timing": "beats",
+ "transition": {
+  "type": "cut"
+ },
+ "shots": [
+  {
+   "template": "vlog-full-tags",
+   "beats": 4,
+   "content": 0
+  },
+  {
+   "template": "vlog-full-tags",
+   "beats": 8,
+   "cut_every": 0.5,
+   "content": 1,
+   "on_drop": true
+  },
+  {
+   "template": "vlog-title",
+   "beats": 8,
+   "cut_every": 0.5
+  },
+  {
+   "template": "vlog-title",
+   "beats": 4,
+   "content": -1
+  }
+ ]
+}

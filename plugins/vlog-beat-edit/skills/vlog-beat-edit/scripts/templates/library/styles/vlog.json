@@ -1,0 +1,121 @@
+{
+ "id": "vlog",
+ "name": "ins 感 vlog",
+ "aspect": "9:16",
+ "canvas": [
+  1080,
+  1920
+ ],
+ "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标，暖调、提黑位、胶片颗粒。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
+ "tokens": {
+  "white": "#FFFFFF",
+  "ink": "#141414",
+  "cream": "#F4EEE4",
+  "paper": "#F4EEE4"
+ },
+ "fonts": {
+  "serif": [
+   "fonts/PlayfairDisplay-Regular.ttf"
+  ],
+  "serif_italic": [
+   "fonts/PlayfairDisplay-Italic.ttf"
+  ],
+  "sans_light": [
+   "/System/Library/Fonts/Avenir Next.ttc#0",
+   "/System/Library/Fonts/Helvetica.ttc#0",
+   "C:/Windows/Fonts/segoeui.ttf",
+   "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+   "fonts/SmileySans-Oblique.ttf"
+  ],
+  "subtitle": [
+   "/System/Library/Fonts/Hiragino Sans GB.ttc#2",
+   "C:/Windows/Fonts/msyhbd.ttc#0",
+   "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc#2",
+   "fonts/SmileySans-Oblique.ttf"
+  ]
+ },
+ "text": {
+  "title_serif": {
+   "font": "serif",
+   "size": 0.082,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "track": 0.01
+  },
+  "title_serif_xl": {
+   "font": "serif",
+   "size": 0.15,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "track": 0.06
+  },
+  "note_italic": {
+   "font": "serif_italic",
+   "size": 0.024,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "line_height": 1.25,
+   "align": "center"
+  },
+  "sub_italic": {
+   "font": "serif_italic",
+   "size": 0.021,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true
+  },
+  "tag": {
+   "font": "sans_light",
+   "size": 0.017,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true
+  },
+  "subtitle": {
+   "font": "subtitle",
+   "size": 0.032,
+   "fill": "white",
+   "stroke": 0.002,
+   "stroke_color": "ink",
+   "shadow": true
+  }
+ },
+ "look": {
+  "note": "调色：暖一点、黑位提一点、饱和度略降、轻暗角、胶片颗粒。任务文件里 look 可以按集覆盖。",
+  "warm": 0.05,
+  "lift": 0.035,
+  "sat": 0.9,
+  "vignette": 0.22,
+  "grain": 0.03
+ },
+ "music": {
+  "note": "维度 14 配乐与卡点的风格默认值",
+  "source": [
+   "beatgen house",
+   "曲库 + beats.py"
+  ],
+  "bpm": [
+   110,
+   130
+  ],
+  "cut_every": 0.5,
+  "hook_beats": 4,
+  "loudness": "-14 LUFS"
+ },
+ "templates": {
+  "note": "这个风格开放的模板。△ 待试：du 看过真实素材的小样后转 ✓。",
+  "shots": {
+   "vlog-full-tags": "△",
+   "vlog-title": "△",
+   "vlog-title-behind": "△",
+   "vlog-inset": "△"
+  },
+  "sequences": {
+   "opening-vlog-beat": "△",
+   "opening-vlog-behind": "△"
+  }
+ }
+}

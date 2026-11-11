@@ -1,0 +1,35 @@
+{
+ "id": "opening-slant",
+ "name": "斜切开场",
+ "kind": "sequence",
+ "status": "△",
+ "summary": "斜切分屏抛标题 → 宽银幕框，人物滑进画幅 → 虚线抠像落到右下角讲。三段都有素材，节奏最快。",
+ "inputs": {
+  "titles": [
+   "hook"
+  ],
+  "content": "1–3 段素材，依次用"
+ },
+ "transition": {
+  "type": "morph",
+  "duration": 0.35
+ },
+ "shots": [
+  {
+   "template": "slant-split",
+   "cues": 2,
+   "title": "hook",
+   "content": 0
+  },
+  {
+   "template": "cinema-band",
+   "cues": 2,
+   "content": 1
+  },
+  {
+   "template": "dashed-cutout",
+   "cues": "rest",
+   "content": 2
+  }
+ ]
+}

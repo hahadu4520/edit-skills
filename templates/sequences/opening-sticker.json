@@ -1,0 +1,40 @@
+{
+ "id": "opening-sticker",
+ "name": "贴纸钩子开场",
+ "kind": "sequence",
+ "status": "△",
+ "summary": "描边贴纸人抛钩子 → 卡片圆窗交代素材 → 圆窗形变到画面中间、素材铺满。",
+ "inputs": {
+  "titles": [
+   "hook",
+   "topic"
+  ],
+  "content": "1–2 段素材：第 1 段进卡片，第 2 段铺满（只有 1 段就都用它）"
+ },
+ "transition": {
+  "type": "morph",
+  "duration": 0.4
+ },
+ "shots": [
+  {
+   "template": "sticker-hook",
+   "cues": 2,
+   "title": "hook"
+  },
+  {
+   "template": "card-pip",
+   "cues": 2,
+   "title": "topic",
+   "content": 0
+  },
+  {
+   "template": "blur-pip",
+   "cues": "rest",
+   "content": 1,
+   "background": {
+    "type": "content",
+    "dim": 0.15
+   }
+  }
+ ]
+}

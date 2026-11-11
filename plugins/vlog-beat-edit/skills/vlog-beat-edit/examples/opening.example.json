@@ -1,0 +1,27 @@
+{
+ "style": "vlog",
+ "sequence": "opening-vlog-beat",
+ "music": { "src": "music.wav", "beats": "music.beats.json", "start": "auto" },
+ "content": [
+  { "src": "素材/01_钩子_回头.mp4" },
+  { "src": "素材/02_街道.mp4", "start": 1.0 },
+  { "src": "素材/03_手拿饮料.mp4" },
+  { "src": "素材/04_冰淇淋.mp4" },
+  { "src": "素材/05_小店.mp4" },
+  { "src": "素材/06_硬币.mp4" },
+  { "src": "素材/07_脚步.mp4" },
+  { "src": "素材/08_贩卖机.mp4" },
+  { "src": "素材/09_餐盘.mp4" },
+  { "src": "素材/10_泳池.mp4", "focus": [0.5, 0.6] },
+  { "src": "素材/11_杂货.mp4", "crop": [0, 0, 1, 0.85] },
+  { "src": "素材/12_收尾_自拍.mp4" }
+ ],
+ "titles": {
+  "tag_l": "atmosphere.daily",
+  "tag_r": "in tokyo",
+  "title": "Tokyo",
+  "note": "*july 2026 Record\nby du",
+  "sub": "laid-back vibe",
+  "big": "VLOG"
+ }
+}

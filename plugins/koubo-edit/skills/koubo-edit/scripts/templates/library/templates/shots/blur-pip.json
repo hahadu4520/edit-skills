@@ -1,0 +1,52 @@
+{
+ "id": "blur-pip",
+ "name": "虚化圆窗",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "内容 + 人像小窗",
+ "summary": "背景是人像虚化（或换成素材铺满），中间挖出一个清晰的圆形人像，字幕在圆窗下方。从全屏人像形变过来最顺。",
+ "needs": [
+  "portrait"
+ ],
+ "dims": {
+  "1 排版与布局": "背景铺满 + 居中圆窗",
+  "6 字幕": "圆窗下方",
+  "10 人像": "居中大圆窗 + 白圈",
+  "11 布景": "人像虚化，可在片段里换成素材"
+ },
+ "background": {
+  "type": "portrait_blur",
+  "blur": 0.03,
+  "dim": 0.15
+ },
+ "layers": [
+  {
+   "slot": "portrait",
+   "shape": "circle",
+   "box": [
+    0.17,
+    0.26,
+    0.66,
+    null
+   ],
+   "face_width": 0.5,
+   "ring": {
+    "color": "white",
+    "width": 0.006
+   },
+   "shadow": true
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.68
+   ],
+   "text_style": "subtitle"
+  }
+ ]
+}

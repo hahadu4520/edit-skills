@@ -1,0 +1,73 @@
+{
+ "id": "card-pip",
+ "name": "卡片圆窗",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16"
+ ],
+ "layout_class": "内容 + 人像小窗",
+ "summary": "纸纹底，上半是素材圆角卡片，人像圆窗压在卡片右下角，标题在卡片上方。素材是主角，人只是陪着讲。",
+ "needs": [
+  "portrait",
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "内容卡片在上 + 圆窗右下",
+  "6 字幕": "卡片下方",
+  "9 动效与花字": "标题在卡片上方",
+  "10 人像": "圆窗 + 白圈",
+  "11 布景": "纸纹底"
+ },
+ "background": {
+  "type": "paper"
+ },
+ "layers": [
+  {
+   "slot": "content",
+   "shape": "roundrect",
+   "box": [
+    0.06,
+    0.13,
+    0.88,
+    0.4
+   ],
+   "radius": 0.05,
+   "shadow": true
+  },
+  {
+   "slot": "portrait",
+   "shape": "circle",
+   "box": [
+    0.53,
+    0.43,
+    0.4,
+    null
+   ],
+   "face_width": 0.55,
+   "ring": {
+    "color": "white",
+    "width": 0.008
+   },
+   "shadow": true,
+   "enter": "pop"
+  },
+  {
+   "slot": "title",
+   "anchor": [
+    0.5,
+    0.075
+   ],
+   "text_style": "title_accent",
+   "enter": "pop"
+  },
+  {
+   "slot": "subtitle",
+   "anchor": [
+    0.5,
+    0.79
+   ],
+   "text_style": "subtitle"
+  }
+ ]
+}
