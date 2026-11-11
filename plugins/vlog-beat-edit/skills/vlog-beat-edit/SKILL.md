@@ -190,7 +190,7 @@ python <SKILL>/scripts/review/review.py serve <workdir> --video <workdir>/vlog_�
    - `place` 哪一站（按到店顺序写，站的先后就是表里第一次出现的顺序）、`subject` 主体（sign 店招 / street 街景 / people 人在干嘛 / selfie 自拍口播 / drink / food / object 菜单小票海报 / animal / group 合照）、`scale` 景别
    - `list` 清单用这一刀（每站最多一段，不标就自动挑人在干杯、做酒的中景）、`talk` [开始秒, 结束秒]、`action_at`、`screen` [x, y, 宽, 高]（屏幕在竖屏画面里的位置）、`photo` 照片、`group` 合照、`sticker` 可做贴纸（true 或取哪一秒）
    - `titles`：`hello` `to` `city`（标题）、`thanks` `memo`（致谢卡两行）
-   - `stickers`（可选）：自己抠好的 PNG（透明底，自动加白描边）、照片（白边卡片，微微歪）、视频某一帧 `{"src": "x.mp4", "t": 3.1}`；`"cut": "person"` 自动抠人。不写就从素材里自动截：物件、饮品、食物、店招、动物的特写 → 白边照片卡，自拍放最后自动抠人
+   - `stickers`（可选）：自己抠好的 PNG（透明底，自动加白描边）、照片（白边卡片，统一裁成 3:4 竖版、同一位置同一大小、不歪，只快速换图）、视频某一帧 `{"src": "x.mp4", "t": 3.1}`；`"cut": "person"` 自动抠人。不写就从素材里自动截：物件、饮品、食物、店招、动物的特写 → 白边照片卡，自拍放最后自动抠人
    - `plate`（可选）：底板用哪段、第几秒；不写就用第一段街景远景
    - **只用用户自己的素材**，不用别人的视频和人像。
 
