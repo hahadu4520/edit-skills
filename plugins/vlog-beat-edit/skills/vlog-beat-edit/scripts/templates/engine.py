@@ -244,6 +244,7 @@ class Content:
         self.focus = spec.get("focus")  # 铺满时取景中心（素材宽高的比例），默认正中
         self.start = spec.get("start", 0)
         self.crop = spec.get("crop")  # [x, y, 宽, 高]，源画面比例，裁掉不要的部分（比如烧进去的字幕）
+        self.freeze = spec.get("freeze", False)  # 定格：一直用 start 那一帧（拼贴开场的底板）
         ext = os.path.splitext(self.src)[1].lower()
         self.is_img = ext in (".png", ".jpg", ".jpeg", ".webp")
         if self.is_img:
@@ -257,6 +258,8 @@ class Content:
     def frame(self, t, dur):
         if self.is_img:
             return self._crop(self.img), 1 + (self.push - 1) * min(1, max(0, t / max(dur, 0.1)))
+        if self.freeze:
+            t = 0
         i = min(int((self.start + t) * self.fps), self.n - 1)  # 素材比镜头短就停在最后一帧
         if i != self._last or self._f is None:
             if i != self._last + 1:
@@ -380,13 +383,15 @@ class TextCache:
         self.st = style
         self.c = {}
 
-    def render(self, text, sname, max_w=None):
-        k = (text, sname, max_w)
+    def render(self, text, sname, max_w=None, fill=None):
+        k = (text, sname, max_w, fill)
         if k in self.c:
             return self.c[k]
         st, S = self.st.text_style(sname), self.st
         px = int(st["size"] * S.H)
         f = S.font(st["font"], px)
+        if st.get("cjk_font") and any(ord(ch) >= 0x2E80 for ch in text):  # 卡通英文字体没有中文：中文换这个字体
+            f = S.font(st["cjk_font"], int(px * st.get("cjk_scale", 0.9)))
         lines = text.split("\n")
         sw = int(st.get("stroke", 0) * S.H)
         lh = int(px * st.get("line_height", 1.15))
@@ -398,7 +403,7 @@ class TextCache:
         bw, bh = int(max(widths)) + 2 * pad, lh * len(lines) + 2 * pad
         im = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
         d = ImageDraw.Draw(im)
-        fills = st.get("fills") or [st["fill"]]
+        fills = [fill] if fill else (st.get("fills") or [st["fill"]])
         box = st.get("box")
         if box:
             bpx = int(box.get("pad", 0.4) * px)
@@ -470,6 +475,8 @@ class Renderer:
         p = job.get("portrait")  # vlog 开头可以没有口播
         self.P = Portrait(p["src"], p.get("start", 0), self.models) if p else None
         self.contents = [Content(c, base) for c in job.get("content", [])]
+        self.stickers = job.get("stickers", [])  # 拼贴开场的贴纸：图片 / 视频某一帧，见 sticker()
+        self._stk = {}
         self.cues = job.get("cues", [])
         self.titles = job.get("titles", {})
         self.music = job.get("music")
@@ -570,7 +577,7 @@ class Renderer:
                         texts[L.get("key") or sh.get("title") or "title"] = tx
             out["shots"].append({"index": k, "template": sh["template"], "t0": round(sh["t0"], 3), "t1": round(sh["t1"], 3),
                                  "beats": sh.get("beats"), "cut_every": sh.get("cut_every"), "segments": segs, "texts": texts,
-                                 **{k: sh[k] for k in ("role", "why", "chapter") if k in sh}})
+                                 **{k: sh[k] for k in ("role", "why", "chapter", "seconds", "from_box") if k in sh}})
         if self.beats:
             d = out["duration"]
             bs, k = [], 0
@@ -634,6 +641,66 @@ class Renderer:
             if al <= 0.001:
                 continue
             self.layer(canvas, L, t, lt, dur, shot, content, al)
+
+    def sticker(self, j, px):
+        """第 j 张贴纸，最长边 px 像素 → RGBA。
+        cut: alpha 用图片自己的透明通道（抠好的 PNG）/ person 自动抠人（MediaPipe）/ card（默认）白边照片卡，微微歪一点。
+        不是 card 的都加一圈白描边，像贴纸。"""
+        k = (j, px)
+        if k in self._stk:
+            return self._stk[k]
+        sp = self.stickers[j]
+        src = os.path.join(self.base, os.path.expanduser(sp["src"]))
+        if os.path.splitext(src)[1].lower() in (".png", ".jpg", ".jpeg", ".webp"):
+            im = np.array(Image.open(src).convert("RGBA"))
+        else:
+            cap = cv2.VideoCapture(src)
+            cap.set(cv2.CAP_PROP_POS_MSEC, sp.get("t", 0) * 1000)
+            ok, f = cap.read()
+            cap.release()
+            if not ok:
+                raise SystemExit(f"贴纸取不到帧：{sp['src']} 第 {sp.get('t', 0)} 秒")
+            im = np.dstack([cv2.cvtColor(f, cv2.COLOR_BGR2RGB), np.full(f.shape[:2], 255, np.uint8)])
+        if sp.get("crop"):
+            h, w = im.shape[:2]
+            x, y, cw, ch = sp["crop"]
+            im = im[int(y * h):int((y + ch) * h), int(x * w):int((x + cw) * w)]
+        cut = sp.get("cut") or ("alpha" if im[..., 3].min() < 250 else "card")
+        h, w = im.shape[:2]
+        s = px / max(h, w)
+        im = cv2.resize(im, (max(1, int(w * s)), max(1, int(h * s))), interpolation=cv2.INTER_AREA)
+        h, w = im.shape[:2]
+        rgb, a = im[..., :3], im[..., 3].astype(np.float32) / 255
+        if cut == "person":
+            a = person_mask(rgb, self.models)
+        b = max(3, int(px * 0.035))  # 白边 / 描边宽度
+        pad = b * 4
+        H_, W_ = h + 2 * pad, w + 2 * pad
+        out = np.zeros((H_, W_, 4), np.float32)
+        if cut == "card":
+            m = np.zeros((H_, W_), np.float32)
+            m[pad - b:pad + h + b, pad - b:pad + w + b] = 1
+        else:
+            m0 = np.zeros((H_, W_), np.uint8)
+            m0[pad:pad + h, pad:pad + w] = (a > 0.5).astype(np.uint8)
+            m = cv2.dilate(m0, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * b + 1, 2 * b + 1))).astype(np.float32)
+            m = cv2.GaussianBlur(m, (0, 0), 1.0)
+        sh = cv2.GaussianBlur(m, (0, 0), b * 1.2) * 0.35  # 投影
+        sh = np.roll(sh, b, axis=0)
+        out[..., 3] = np.maximum(m, sh)
+        out[..., :3] = np.where(m[..., None] > 0, 255, 20)
+        inner = np.zeros((H_, W_), np.float32)
+        inner[pad:pad + h, pad:pad + w] = a if cut != "card" else 1
+        body = np.zeros((H_, W_, 3), np.float32)
+        body[pad:pad + h, pad:pad + w] = rgb
+        out[..., :3] = body * inner[..., None] + out[..., :3] * (1 - inner[..., None])
+        tilt = sp.get("tilt", ((j * 37) % 13 - 6) if cut == "card" else 0)  # 卡片默认歪 -6°～6°
+        if tilt:
+            M = cv2.getRotationMatrix2D((W_ / 2, H_ / 2), tilt, 1.0)
+            out = cv2.warpAffine(out, M, (W_, H_), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0, 0))
+        out[..., 3] *= 255
+        self._stk[k] = np.clip(out, 0, 255).astype(np.uint8)
+        return self._stk[k]
 
     def bust(self, shape):
         """半身像修形：原片里人往往顶到画框两侧和底边，抠出来会有一刀直边。
@@ -721,6 +788,10 @@ class Renderer:
                 return
         if isinstance(L.get("content"), int) and self.contents:
             content = self.contents[L["content"] % len(self.contents)]
+        elif L.get("content") == "inset":  # 画中画用哪段素材，写在镜头上（shot.inset）
+            if shot.get("inset") is None:
+                return
+            content = self.contents[shot["inset"] % len(self.contents)]
         a, sc, rev, dy = self.enter(L, lt)
         alpha *= a
         dx = 0
@@ -739,7 +810,7 @@ class Renderer:
             if slot == "content":
                 if not content:
                     return
-                f, z = content.frame(*(self._clt if shot.get("cuts") and not isinstance(L.get("content"), int) else (lt, dur)))
+                f, z = content.frame(*(self._clt if shot.get("cuts") and L.get("content") is None else (lt, dur)))
                 img = fit_crop(f, w, h, zoom=z * L.get("zoom", 1.0))
             else:
                 f = P.frame(t)
@@ -780,6 +851,20 @@ class Renderer:
                         soft_shadow(canvas, big * alpha, ox, oy, 0.35, 18, 10)
                     blend(canvas, solid(th, tw, col), ox, oy, big, alpha)
             blend(canvas, img, ox, oy, mm, alpha)
+        elif slot == "stickers":
+            # 定格拼贴：贴纸按 fps 一张张「啪」地贴到底板上（默认 12 张每秒，像定格动画），最后一张停到镜头结束
+            n = len(self.stickers)
+            if not n:
+                return
+            fps = L.get("fps", 12)
+            k = min(int(lt * fps), n - 1)
+            spots = L["spots"]
+            for j in (range(k + 1) if L.get("stack") else [k]):
+                cx, cy, size = spots[j % len(spots)]
+                size *= self.stickers[j].get("scale", 1.0)
+                rgba = self.sticker(j, int(size * S.W))
+                u = (lt - j / fps) * fps  # 刚贴上那一帧大一点，像拍上去
+                put_text(canvas, rgba, int(cx * S.W), int(cy * S.H), "center", alpha, 1.1 if u < 1 else 1.0)
         elif slot == "panel":
             pts = np.array([[p[0] * S.W, p[1] * S.H] for p in L["points"]], np.int32)
             m = np.zeros((S.H, S.W), np.uint8)
@@ -827,7 +912,8 @@ class Renderer:
             text = self.title_text(shot, L)
             if not text:
                 return
-            rgba = self.txt.render(text, L.get("text_style", "title"), int(L.get("max_w", 0.9) * S.W))
+            fill = shot.get("accent") if L.get("fill") == "shot" else None  # 每个镜头换一种颜色（地点清单）
+            rgba = self.txt.render(text, L.get("text_style", "title"), int(L.get("max_w", 0.9) * S.W), fill)
             put_text(canvas, rgba, int((L["anchor"][0] + dx) * S.W), int((L["anchor"][1] + (dy or 0)) * S.H), L.get("align", "center"), alpha, sc, rev)
             if L.get("behind_subject") and getattr(self, "_bg_img", None) is not None:
                 # 字在人后：把背景画面里的人抠出来，再盖回字上面
@@ -887,6 +973,17 @@ class Renderer:
         T = self.trans.get("duration", 0.4)
         typ = shot.get("transition", self.trans.get("type", "morph"))
         lt = t - shot["t0"]
+        if shot.get("from_box") and k > 0 and lt < shot.get("from_dur", 0.45):
+            # 屏中屏：上一刀拍的是相机 / 手机屏幕，这一刀先缩在那块屏幕里，再放大铺满
+            u = lt / shot.get("from_dur", 0.45)
+            e = 1 - (1 - u) ** 3
+            self.draw(canvas, self.shots[k - 1], t)
+            sub = np.zeros_like(canvas)
+            self.draw(sub, shot, t)
+            bx = [lerp(a, b, e) for a, b in zip(shot["from_box"], [0, 0, 1, 1])]
+            x, y, w, h = int(bx[0] * S.W), int(bx[1] * S.H), max(4, int(bx[2] * S.W)), max(4, int(bx[3] * S.H))
+            blend(canvas, cv2.resize(sub, (w, h), interpolation=cv2.INTER_AREA), x, y, np.ones((h, w), np.float32))
+            return canvas
         if k == 0 or lt >= T or typ == "cut":
             self.draw(canvas, shot, t)
             return canvas
@@ -988,6 +1085,8 @@ def wire(tid, out, style="koubo"):
     if bgt == "content":
         d.rectangle((0, 0, W, H), fill=(186, 205, 222))
         d.text((W / 2, H * 0.12), "素材铺满", font=f, fill=(90, 110, 130), anchor="mm")
+    elif bgt == "color":
+        d.rectangle((0, 0, W, H), fill=S.color(tpl["background"].get("color", "ink")))
     elif bgt == "portrait_blur":
         d.rectangle((0, 0, W, H), fill=(120, 116, 112))
         d.text((W / 2, H * 0.12), "人像虚化压暗", font=f, fill=(200, 200, 200), anchor="mm")
@@ -1008,6 +1107,11 @@ def wire(tid, out, style="koubo"):
             d.ellipse((cx - h * 0.17, y + h * 0.05, cx + h * 0.17, y + h * 0.45), fill=(232, 170, 120), outline="white", width=10)
             d.rounded_rectangle((cx - h * 0.3, y + h * 0.48, cx + h * 0.3, y + h), int(h * 0.12), fill=(232, 170, 120), outline="white", width=10)
             d.text((cx, y + h * 0.75), "抠像" + ("·虚线" if st.get("style") == "dashed" else "·描边" if st else ""), font=f, fill="white", anchor="mm")
+        elif s == "stickers":
+            for j, (cx, cy, sz) in enumerate(L["spots"][:4]):
+                r = sz * W / 2
+                d.rounded_rectangle((cx * W - r * 0.75, cy * H - r, cx * W + r * 0.75, cy * H + r), 18, fill=(250, 250, 250), outline=(60, 60, 60), width=6)
+                d.text((cx * W, cy * H), f"贴纸{j + 1}", font=f, fill=(90, 90, 90), anchor="mm")
         elif s == "panel":
             d.polygon([(p[0] * W, p[1] * H) for p in L["points"]], fill=(40, 40, 40))
         elif sh == "polygon":

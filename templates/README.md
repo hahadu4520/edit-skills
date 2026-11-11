@@ -35,6 +35,16 @@ ins 感 vlog（`styles/vlog.json`，技能是 `vlog-beat-edit`）的镜头模板
 | <img src="shots/vlog-title-behind.jpg" width="90"> | `vlog-title-behind` | 字在人后 | 全屏内容 + 抠像 | 素材（画面里要有人）、抠像 | △ |
 | <img src="shots/vlog-inset.jpg" width="90"> | `vlog-inset` | 画中画弹窗 | 全屏内容 + 小窗 | 素材 | △ |
 
+拼贴清单开场用的镜头模板。来源：2026-11-11 du 给的新加坡团建 vlog（只取结构）。
+
+| 线框 | id | 名字 | 版式类 | 要什么 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| <img src="shots/vlog-collage-title.jpg" width="90"> | `vlog-collage-title` | 底板逐词标题 | 全屏内容（定格） | 素材 | △ |
+| <img src="shots/vlog-collage.jpg" width="90"> | `vlog-collage` | 定格拼贴 | 全屏内容 + 贴纸 | 素材、贴纸 | △ |
+| <img src="shots/vlog-place-list.jpg" width="90"> | `vlog-place-list` | 地点清单 | 全屏内容 | 素材 | △ |
+| <img src="shots/vlog-photo-inset.jpg" width="90"> | `vlog-photo-inset` | 白边照片画中画 | 全屏内容 + 小窗 | 素材、照片 | △ |
+| <img src="shots/vlog-thanks-card.jpg" width="90"> | `vlog-thanks-card` | 致谢卡 | 纯色底 + 相框 | 合照 | △ |
+
 ### 片段模板（`sequences/`）
 
 几个镜头模板按字幕句数（口播）或配乐拍数（vlog）串起来，加转场。现在都是开头。
@@ -45,6 +55,7 @@ ins 感 vlog（`styles/vlog.json`，技能是 `vlog-beat-edit`）的镜头模板
 | `opening-slant` | 斜切开场 | 斜切分屏（2 句）→ 宽银幕框（2 句）→ 虚线抠像 | 标题 `hook`；1–3 段素材 |
 | `opening-pullback` | 全屏收圆窗开场 | 全屏人像（2 句）→ 虚化圆窗（1 句）→ 换素材铺满（1 句）→ 三明治竖排 | 标题 `hook`；1–2 段素材 |
 | `opening-vlog-beat` | ins 感卡点开场 | 钩子（4 拍，配乐前奏）→ 落点进鼓，每半拍硬切（8 拍）→ 衬线大标题压住、底下继续每半拍换（8 拍）→ 结尾重音落在收尾镜头（4 拍） | 配乐 + 节拍表；`tag_l` `tag_r` `title` `note` `sub`；钩子 1 段 + 快切 8–16 段 + 收尾 1 段 |
+| `collage-list` | 拼贴清单开场（编排） | 底板逐词标题（2 拍）→ 落点进鼓、定格拼贴 12 张每秒 → 地点清单一店一刀、越切越快 → 正片按时间线不卡拍 → 致谢卡；镜头由 `shared/vlog/collage.py` 按素材标签现排 | 素材表（地点、主体、景别 + list / screen / photo / group）；`hello` `to` `city` `thanks` `memo` |
 | `opening-vlog-behind` | 字在人后开场 | 钩子（4 拍）→ 落点上超大衬线字压在人身后（4 拍）→ 每半拍快切（8 拍）→ 衬线标题每拍换（4 拍）→ 收尾（4 拍） | 同上，加 `big`；第 2 段素材要有人站在画面中间 |
 
 元件模板（字幕样式、花字样式、标题样式）现在放在风格文件的 `text` 一节里，模板按名字引用；以后多了再拆出来。
@@ -73,7 +84,9 @@ ins 感 vlog（`styles/vlog.json`，技能是 `vlog-beat-edit`）的镜头模板
 
 - 坐标都是画布的比例，`box` 是 `[x, y, 宽, 高]`；圆的高写 `null`，按宽算成正圆。
 - `shape`：`rect`、`roundrect`、`circle`（这三种之间能形变）、`polygon`（给 `points`）、`cutout`（抠像，可加 `stroke` 实线或虚线描边、`bust` 把肩膀收圆、`align` 靠左右）。
-- `slot`：`content`、`portrait`、`title`、`subtitle`，还有装饰用的 `panel`（色块）和 `lines`（横线）。
+- `slot`：`content`、`portrait`、`title`、`subtitle`，还有装饰用的 `panel`（色块）、`lines`（横线）和 `stickers`（定格拼贴：任务的 `stickers` 按 `fps` 一张张贴到 `spots` 的位置，`[中心 x, 中心 y, 最长边占画宽]`）。
+- `content` 层的 `content` 可以写素材序号，或写 `"inset"` 用镜头上的 `inset`（画中画照片）；标题层 `"fill": "shot"` 用镜头上的 `accent` 颜色（地点清单每刀换色）。
+- 镜头上可以写 `from_box: [x, y, 宽, 高]`：屏中屏，这一刀先缩在上一刀画面里那块屏幕的位置，再放大铺满。素材可以写 `freeze: true` 定格在 `start` 那一帧。
 - 人像取景：`face_width` 是脸占框宽的比例，`face_y` 是脸在框里的高度（默认 0.42）。
 - `enter` 进场：`pop` 弹出、`fade` 淡入、`rise` 上浮、`wipe` 刷出、`type` 逐字打出（字幕）、`draw` 画线、`slide_left` 从左滑入、`slide_down` 从上扫入（斜切）。
 - 颜色和 `text_style` 都是风格文件里的名字，不写死色值。

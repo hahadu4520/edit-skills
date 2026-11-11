@@ -1,6 +1,6 @@
 # vlog 卡点剪辑（vlog-beat-edit）
 
-两个模板：**ins 感卡点开头**和**城市电影感**。
+三个模板：**ins 感卡点开头**、**城市电影感**和**拼贴清单开场**。
 
 ## 模板一：ins 感卡点开头
 
@@ -15,6 +15,12 @@
 ## 模板二：城市电影感
 
 一座城市的地标、街景、人文，剪成 20–40 秒有电影感的片子。不逐拍硬切，镜头按**素材之间的关系**排：倒影接实物、同一母题跨地点接力（石狮 → 门环）、同一地点由远到近、细节先于人、结尾回到开场的地标。你只要给每段素材打几个抽象标签（地点、景别、主体、母题），`arrange.py` 就按规则排好，任何城市都能用。配乐是没有鼓的弦乐 + 钢琴，换章落在低音上。
+
+## 模板三：拼贴清单开场
+
+团建、朋友出游、一晚上跑好几家店，剪成 20–50 秒。开场两段快闪抓人：一张定格街景上逐词出「Welcome to 地名」，落点进鼓后这趟的东西（菜单、小票、饮品、店标、动物，最后是你自己）12 张每秒一张张贴上来；再来一串「Welcome to 店名」，一店一刀、店名每刀换色、一刀比一刀短，冲进正片。正片按时间线一站一站走，切点跟内容（话说完、东西端上来），**不卡拍**；拍相机屏幕的那一刀会从屏幕里放大接下一刀；同一站的照片贴成白边小照片。结尾黑底致谢卡 + 合照。给素材打标签（地点、主体、景别，加 list / screen / photo / group），`collage.py` 就按规则排好，贴纸不给也会从素材里自动截。配乐是有鼓的 house，124 BPM。
+
+无人像的占位样片：项目文件里的 `vlog开头分析/样片_拼贴清单开场_无人像占位.mp4`（色块和文字代替真实画面，只看结构和节奏）。
 
 ## 用法
 
@@ -31,4 +37,4 @@
 
 ## 字体
 
-Playfair Display（SIL Open Font License，见 `fonts/OFL-PlayfairDisplay.txt`）、思源宋体 Noto Serif SC Light（SIL OFL，见 `fonts/OFL-NotoSerifSC.txt`，城市名用）、得意黑 Smiley Sans（SIL OFL）。
+Playfair Display（SIL Open Font License，见 `fonts/OFL-PlayfairDisplay.txt`）、思源宋体 Noto Serif SC Light（SIL OFL，见 `fonts/OFL-NotoSerifSC.txt`，城市名用）、得意黑 Smiley Sans（SIL OFL）。拼贴清单开场的卡通手写体用系统自带的 Chalkboard SE / Marker Felt（macOS）或 Comic Sans（Windows），都没有就退回得意黑；中文店名自动换黑体。
