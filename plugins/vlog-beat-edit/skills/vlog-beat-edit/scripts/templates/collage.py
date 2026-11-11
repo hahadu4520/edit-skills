@@ -142,7 +142,9 @@ def arrange(spec):
         g = [c for c in usable if c["place"] == p and c["i"] not in in_list]
         if not g:
             continue
-        est = next((c for c in g if c["subject"] in EST), None)
+        # 交代地方：店招、门口、街景；城市旅行没有这些就用地标 / 建筑 / 风景的远景
+        est = next((c for c in g if c["subject"] in EST), None) or next(
+            (c for c in g if c["scale"] == "wide" and c["subject"] in ("landmark", "building", "nature")), None)
         seq = ([est] if est else []) + [c for c in g if c is not est]
         # 避免跳切：同主体同景别连着的，和后面第一个不一样的换个位置
         for k in range(1, len(seq) - 1):
@@ -190,13 +192,13 @@ def to_job(spec, A, bpm, music):
     n = len(A["stickers"])
     sb = max(2, math.ceil((n / STICKER_FPS + 0.5 * beat) / beat))
     shots.append({"template": "vlog-collage", "beats": sb, "content": pi, "on_drop": True, "role": "拼贴",
-                  "why": f"落点进鼓：同一张底板上 {n} 张贴纸 12 张每秒贴上来，先物后人，最后一张是自己"})
+                  "why": f"落点进鼓：同一张底板上 {n} 张贴纸 12 张每秒贴上来" + ("，先物后人，最后一张是自己" if any(x.get("cut") == "person" for x in A["stickers"]) else "")})
     lb = list_beats(len(A["list"]))
     for k, (c, b) in enumerate(zip(A["list"], lb)):
         ci = add(c)
         shots.append({"template": "vlog-place-list", "beats": b, "content": ci, "role": "清单", "chapter": c["place"],
                       "texts": {"place": c["place"]}, "accent": LIST_COLORS[k % len(LIST_COLORS)],
-                      "why": f"第 {k + 1} 家：{round(b, 2)} 拍" + ("，越切越快" if k else "，清单开始")})
+                      "why": f"第 {k + 1} 站：{round(b, 2)} 拍" + ("，越切越快" if k else "，清单开始")})
     prev = None
     for c in A["body"]:
         st, d = shot_len(c)
@@ -268,7 +270,7 @@ def main():
         print(f"配乐：beatgen house {bpm:g} BPM，前奏 1 小节 + {drop} 小节 → {wav}")
     json.dump(job, open(a.job, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     beat = 60 / bpm
-    print(f"done {a.job}：{len(job['shots'])} 个镜头，约 {total:.1f} 秒；贴纸 {len(A['stickers'])} 张，清单 {len(A['list'])} 家，正片 {len(A['body'])} 刀")
+    print(f"done {a.job}：{len(job['shots'])} 个镜头，约 {total:.1f} 秒；贴纸 {len(A['stickers'])} 张，清单 {len(A['list'])} 站，正片 {len(A['body'])} 刀")
     t = 0
     for s in job["shots"]:
         d = s["beats"] * beat if "beats" in s else s["seconds"]
