@@ -1,0 +1,47 @@
+{
+ "id": "vlog-full-tags",
+ "name": "全屏素材 + 角标",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "素材铺满，左右各一行很细的小字角标（地点、账号），像杂志角标，不抢画面。钩子和卡点快切都用它，区别只在片段模板里的节拍。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容",
+  "3 镜头": "第一人称手持、生活小物、局部特写",
+  "9 动效与花字": "细体角标，不动",
+  "11 布景、配色与字体": "风格 look：暖调 + 颗粒",
+  "14 配乐与卡点": "钩子停 4 拍；快切每半拍一换"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "tag_l",
+   "anchor": [
+    0.05,
+    0.6
+   ],
+   "align": "left",
+   "text_style": "tag"
+  },
+  {
+   "slot": "title",
+   "key": "tag_r",
+   "anchor": [
+    0.95,
+    0.6
+   ],
+   "align": "right",
+   "text_style": "tag"
+  }
+ ]
+}

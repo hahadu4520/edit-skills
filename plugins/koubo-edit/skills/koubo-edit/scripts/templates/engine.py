@@ -10,6 +10,8 @@
   python engine.py list                                   列出所有模板
 
 job.json 见 templates/README.md「任务文件」一节。
+配乐卡点（维度 14）：job 里给 music（配乐 + 节拍表），片段模板里的镜头就能按「几拍」排、按拍换素材，
+节拍表用 shared/music/beatgen.py 生成，或用 shared/music/beats.py 从现成的歌里测。
 """
 import json, os, sys, math, subprocess, glob
 try:
@@ -102,6 +104,68 @@ class Style:
 
 
 # ---------------------------------------------------------------- 素材
+_SEG = {}
+
+
+def segmenter(models):
+    """人像分割（MediaPipe），口播原片抠像和「字在人后」共用一个。"""
+    if "seg" not in _SEG:
+        import mediapipe as mp
+        from mediapipe.tasks.python import vision, BaseOptions
+        _SEG["mp"] = mp
+        _SEG["seg"] = vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
+            base_options=BaseOptions(model_asset_path=model(models, "selfie_multiclass_256x256.tflite")),
+            output_confidence_masks=True))
+    return _SEG["seg"], _SEG["mp"]
+
+
+def person_mask(img, models):
+    seg, mp = segmenter(models)
+    r = seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(img)))
+    a = 1.0 - r.confidence_masks[0].numpy_view()
+    a = a[..., 0] if a.ndim == 3 else a
+    return np.clip((a - 0.35) / 0.4, 0, 1).astype(np.float32)
+
+
+class Beats:
+    """节拍表：beatgen.py / beats.py 的输出。时间都换算成从开头片段第 0 秒起。"""
+
+    def __init__(self, spec, base):
+        p = spec.get("beats") or os.path.splitext(spec["src"])[0] + ".beats.json"
+        p = os.path.join(base, os.path.expanduser(p))
+        with open(p, encoding="utf-8") as f:
+            self.d = json.load(f)
+        self.bpm = self.d["bpm"]
+        self.len = 60.0 / self.bpm
+        self.raw = np.array(self.d["beats"], np.float64)
+        self.first = 0.0   # 片段第 0 拍是歌里的第几拍（可以是负数：歌在片段开始之后才进来）
+        self.offset = 0.0  # 片段第 0 秒在歌里的秒数
+
+    def song(self, i):
+        """歌里第 i 拍的秒数，i 可以是小数或超出节拍表（按 BPM 往两头推）。"""
+        n = len(self.raw)
+        if i < 0:
+            return self.raw[0] + i * self.len
+        if i > n - 1:
+            return self.raw[-1] + (i - n + 1) * self.len
+        return float(np.interp(i, np.arange(n), self.raw))
+
+    def align_beat(self, i):
+        self.first = i
+        self.offset = self.song(i)
+
+    def align_time(self, t):
+        i = int(np.searchsorted(self.raw, t - 0.02))
+        self.align_beat(i)
+
+    def at(self, k):
+        """片段里第 k 拍的秒数。"""
+        return self.song(self.first + k) - self.offset
+
+    def index_of(self, t):
+        return int(np.argmin(np.abs(self.raw - t)))
+
+
 class Portrait:
     """口播原片：按时间取帧；需要时做人像分割和人脸位置。"""
 
@@ -135,28 +199,12 @@ class Portrait:
         self.cache[i] = f
         return f
 
-    def _segmenter(self):
-        if self._seg is None:
-            import mediapipe as mp
-            from mediapipe.tasks.python import vision, BaseOptions
-            self._mp = mp
-            self._seg = vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
-                base_options=BaseOptions(model_asset_path=model(self.models, "selfie_multiclass_256x256.tflite")),
-                output_confidence_masks=True))
-        return self._seg
-
     def mask(self, t):
         """人像蒙版 0..1，和相邻帧做一点时间平滑，边缘不闪。"""
         i = self.idx(t)
         if i in self.mcache:
             return self.mcache[i]
-        f = self.frame(t)
-        seg = self._segmenter()
-        mp = self._mp
-        r = seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(f)))
-        a = 1.0 - r.confidence_masks[0].numpy_view()
-        a = a[..., 0] if a.ndim == 3 else a
-        a = np.clip((a - 0.35) / 0.4, 0, 1).astype(np.float32)
+        a = person_mask(self.frame(t), self.models)
         prev = self.mcache.get(i - 1)
         if prev is not None:
             a = a * 0.7 + prev * 0.3
@@ -193,6 +241,7 @@ class Content:
         self.push = spec.get("push", 1.06)
         self.focus = spec.get("focus")  # 铺满时取景中心（素材宽高的比例），默认正中
         self.start = spec.get("start", 0)
+        self.crop = spec.get("crop")  # [x, y, 宽, 高]，源画面比例，裁掉不要的部分（比如烧进去的字幕）
         ext = os.path.splitext(self.src)[1].lower()
         self.is_img = ext in (".png", ".jpg", ".jpeg", ".webp")
         if self.is_img:
@@ -205,20 +254,26 @@ class Content:
 
     def frame(self, t, dur):
         if self.is_img:
-            return self.img, 1 + (self.push - 1) * min(1, max(0, t / max(dur, 0.1)))
+            return self._crop(self.img), 1 + (self.push - 1) * min(1, max(0, t / max(dur, 0.1)))
         i = min(int((self.start + t) * self.fps), self.n - 1)  # 素材比镜头短就停在最后一帧
-        if i == self._last and self._f is not None:
-            return self._f, 1.0
-        if i != self._last + 1:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-        ok, f = self.cap.read()
-        if not ok and self._f is None:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.n - 2))
+        if i != self._last or self._f is None:
+            if i != self._last + 1:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ok, f = self.cap.read()
-        if ok:
-            self._f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
-        self._last = i
+            if not ok and self._f is None:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.n - 2))
+                ok, f = self.cap.read()
+            if ok:
+                self._f = self._crop(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
+            self._last = i
         return self._f, 1.0
+
+    def _crop(self, f):
+        if not self.crop or f is None:
+            return f
+        h, w = f.shape[:2]
+        x, y, cw, ch = self.crop
+        return f[int(y * h):int((y + ch) * h), int(x * w):int((x + cw) * w)]
 
 
 # ---------------------------------------------------------------- 画图小工具
@@ -410,15 +465,20 @@ class Renderer:
         self.S = Style(job.get("style", "koubo"))
         self.txt = TextCache(self.S)
         self.models = os.path.expanduser(job.get("models", "~/.cache/edit-skills/models"))
-        p = job["portrait"]
-        self.P = Portrait(p["src"], p.get("start", 0), self.models)
+        p = job.get("portrait")  # vlog 开头可以没有口播
+        self.P = Portrait(p["src"], p.get("start", 0), self.models) if p else None
         self.contents = [Content(c, base) for c in job.get("content", [])]
         self.cues = job.get("cues", [])
         self.titles = job.get("titles", {})
-        self.paper = paper(self.S.W, self.S.H, self.S.color("paper"))
+        self.music = job.get("music")
+        self.beats = Beats(self.music, base) if self.music else None
+        self.paper = paper(self.S.W, self.S.H, self.S.color("paper" if "paper" in self.S.tok else "white"))
+        self.look = dict(self.S.d.get("look", {}), **job.get("look", {}))
+        self._grain = None
         self.shots = self.plan()
         dur = self.shots[-1]["t1"]
-        self.P.detect_face([dur * k / 6 for k in range(6)])
+        if self.P:
+            self.P.detect_face([dur * k / 6 for k in range(6)])
 
     # 片段模板 + 字幕时间 → 每个镜头的起止时间
     def plan(self):
@@ -430,13 +490,33 @@ class Renderer:
         self.trans = spec.get("transition", {"type": "morph", "duration": 0.4})
         shots, ci = [], 0
         cues = self.cues
-        end_all = job.get("duration") or (cues[-1][1] if cues else 8)
+        B = self.beats
+        if B:  # 配乐对齐：标了 on_drop 的镜头正好从落点开始；没有就从歌的 music.start 开始
+            pre = 0
+            for s in spec["shots"]:
+                if s.get("on_drop"):
+                    break
+                pre += s.get("beats", 0)
+            else:
+                pre = None
+            if pre is not None and self.music.get("start", "auto") == "auto":
+                B.align_beat(B.index_of(B.d.get("drop", 0)) - pre)
+            else:
+                st = self.music.get("start", 0)
+                B.align_time(0 if st == "auto" else st)
+        end_all = job.get("duration") or (cues[-1][1] if cues else (B.at(sum(s.get("beats", 0) for s in spec["shots"])) if B else 8))
+        bi = 0      # 当前在第几拍
+        cyc = None  # 按拍换素材时，素材轮到第几段（跨镜头接着往下轮）
         for k, s in enumerate(spec["shots"]):
             t0 = shots[-1]["t1"] if shots else 0
             n = s.get("cues", 1)
             if job.get("split"):  # 任务里可以按这一集的句子长短，改每个镜头占几句
                 n = job["split"][k] if k < len(job["split"]) else n
-            if n == "rest" or k == len(spec["shots"]) - 1:
+            if "beats" in s and B:
+                bi0 = bi
+                bi += s["beats"]
+                t1 = B.at(bi)
+            elif n == "rest" or k == len(spec["shots"]) - 1:
                 t1 = end_all
                 ci = len(cues)
             elif "seconds" in s:
@@ -445,17 +525,53 @@ class Renderer:
                 ci = min(ci + n, len(cues))
                 t1 = cues[ci][0] if ci < len(cues) else end_all
             tpl = load("shot", s["template"])
-            shots.append(dict(s, t0=t0, t1=t1, tpl=tpl, bg=s.get("background", tpl.get("background", {"type": "paper"}))))
+            sh = dict(s, t0=t0, t1=t1, tpl=tpl, bg=s.get("background", tpl.get("background", {"type": "paper"})))
+            # 按拍换素材：cut_every 是几拍换一次（0.5 = 半拍）。切点就是节拍表上的拍点
+            ce = s.get("cut_every")
+            if ce and B and "beats" in s:
+                if cyc is None or isinstance(s.get("content"), int):
+                    cyc = s.get("content", 0)
+                pts, j = [], 0
+                while j * ce < s["beats"] - 1e-6:
+                    pts.append((B.at(bi0 + j * ce), cyc))
+                    cyc += 1
+                    j += 1
+                sh["cuts"] = pts
+                self._cyc0 = getattr(self, "_cyc0", None)
+                if self._cyc0 is None:
+                    self._cyc0 = pts[0][1]
+            elif isinstance(s.get("content"), int):
+                cyc = s["content"] + 1
+            shots.append(sh)
         return shots
+
+    def beat_len(self):
+        return self.beats.len if self.beats else 0.5
 
     def content_of(self, shot):
         if not self.contents:
             return None
         return self.contents[min(shot.get("content", 0), len(self.contents) - 1)]
 
-    def title_text(self, shot):
-        k = shot.get("title")
-        return self.titles.get(k, k) if k else None
+    def cut_at(self, shot, t):
+        """按拍换素材的镜头：现在轮到哪段素材、这段从哪一秒开始放 → (素材, 段内时间, 段长)"""
+        cuts = shot.get("cuts")
+        if not cuts or not self.contents:
+            return self.content_of(shot), t - shot["t0"], shot["t1"] - shot["t0"]
+        j = max(i for i, (a, _) in enumerate(cuts) if a <= t + 1e-6) if t >= cuts[0][0] else 0
+        a, ci = cuts[j]
+        b = cuts[j + 1][0] if j + 1 < len(cuts) else shot["t1"]
+        N = len(self.contents)
+        c0 = min(getattr(self, "_cyc0", 0) or 0, N - 1)
+        if ci >= N:  # 素材不够轮：在快切那一段素材里循环，不再轮回钩子镜头
+            ci = c0 + (ci - c0) % max(1, N - c0)
+        return self.contents[ci % N], t - a, b - a
+
+    def title_text(self, shot, L=None):
+        k = (L or {}).get("key") or shot.get("title")
+        if not k:
+            return None
+        return shot.get("texts", {}).get(k) or self.titles.get(k) or (None if (L or {}).get("key") else k)
 
     def cue_at(self, t):
         for a, b, x in self.cues:
@@ -469,9 +585,10 @@ class Renderer:
         tpl = shot["tpl"]
         lt = t - shot["t0"]
         dur = shot["t1"] - shot["t0"]
-        content = self.content_of(shot)
+        content, clt, cdur = self.cut_at(shot, t)
         if bg:
-            self.background(canvas, shot["bg"], t, shot, content, lt, dur)
+            self.background(canvas, shot["bg"], t, shot, content, clt, cdur)
+        self._clt = (clt, cdur)
         for li, L in enumerate(layers or tpl["layers"]):
             al = (alphas or {}).get(li, 1.0)
             if al <= 0.001:
@@ -506,9 +623,11 @@ class Renderer:
             f, z = content.frame(lt, dur)
             fc = (content.focus[0] * f.shape[1], content.focus[1] * f.shape[0]) if content.focus else None
             img = fit_crop(f, S.W, S.H, focus=fc, zoom=z, face_y=0.5)
-        else:  # portrait_blur：口播画面放大、虚化、压暗
+        elif self.P:  # portrait_blur：口播画面放大、虚化、压暗
             f = self.P.frame(t)
             img = fit_crop(f, S.W, S.H)
+        else:
+            img = self.paper
         if B.get("blur"):
             k = B["blur"] * S.W
             small = cv2.resize(img, (S.W // 4, S.H // 4))
@@ -519,6 +638,7 @@ class Renderer:
             y = int(B["lower_dim"][0] * S.H)
             img = img.copy()
             img[y:] = (img[y:].astype(np.float32) * (1 - B["lower_dim"][1])).astype(np.uint8)
+        self._bg_img = img
         if alpha >= 0.999:
             canvas[:] = img
         else:
@@ -546,6 +666,16 @@ class Renderer:
     def layer(self, canvas, L, t, lt, dur, shot, content, alpha):
         S, P = self.S, self.P
         slot, shape = L["slot"], L.get("shape")
+        if slot == "portrait" and P is None:
+            return
+        if L.get("at_beat") is not None:  # 卡点出现：镜头开始后第几拍才出来，进场动画从那一拍算
+            lt -= L["at_beat"] * self.beat_len()
+            if lt < 0:
+                return
+        if L.get("until_beat") is not None and lt >= L["until_beat"] * self.beat_len():
+            return
+        if isinstance(L.get("content"), int) and self.contents:
+            content = self.contents[L["content"] % len(self.contents)]
         a, sc, rev, dy = self.enter(L, lt)
         alpha *= a
         dx = 0
@@ -564,8 +694,8 @@ class Renderer:
             if slot == "content":
                 if not content:
                     return
-                f, z = content.frame(lt, dur)
-                img = fit_crop(f, w, h, zoom=z)
+                f, z = content.frame(*(self._clt if shot.get("cuts") and not isinstance(L.get("content"), int) else (lt, dur)))
+                img = fit_crop(f, w, h, zoom=z * L.get("zoom", 1.0))
             else:
                 f = P.frame(t)
                 fx, fy, fw = P.face
@@ -649,11 +779,16 @@ class Renderer:
                 cv2.line(ov, (0, yp), (xe, yp), col, wpx, cv2.LINE_AA)
                 canvas[:] = (ov.astype(np.float32) * alpha + canvas.astype(np.float32) * (1 - alpha)).astype(np.uint8)
         elif slot == "title":
-            text = self.title_text(shot)
+            text = self.title_text(shot, L)
             if not text:
                 return
             rgba = self.txt.render(text, L.get("text_style", "title"), int(L.get("max_w", 0.9) * S.W))
             put_text(canvas, rgba, int((L["anchor"][0] + dx) * S.W), int((L["anchor"][1] + (dy or 0)) * S.H), L.get("align", "center"), alpha, sc, rev)
+            if L.get("behind_subject") and getattr(self, "_bg_img", None) is not None:
+                # 字在人后：把背景画面里的人抠出来，再盖回字上面
+                m = person_mask(self._bg_img, self.models)
+                m = cv2.GaussianBlur(m, (0, 0), 1.5)
+                blend(canvas, self._bg_img, 0, 0, m)
         elif slot == "subtitle":
             text = self.cue_at(t)
             if not text:
@@ -665,8 +800,41 @@ class Renderer:
             rgba = self.txt.render(text, L.get("text_style", "subtitle"), int(L.get("max_w", 0.9) * S.W))
             put_text(canvas, rgba, int(L["anchor"][0] * S.W), int(L["anchor"][1] * S.H), L.get("align", "center"), alpha, 1, rev)
 
-    # 转场：同名同类的块插值位置和大小（形变），其余块淡入淡出
     def frame(self, t):
+        return self.grade(self._frame(t), t)
+
+    def grade(self, im, t):
+        """风格的调色（look）：暖一点、黑位提一点、饱和度、暗角、胶片颗粒。只在风格或任务里写了才做。"""
+        L = self.look
+        if not L:
+            return im
+        x = im.astype(np.float32) / 255
+        if L.get("lift"):
+            x = L["lift"] + x * (1 - L["lift"])
+        if L.get("warm"):
+            w = L["warm"]
+            x[..., 0] *= 1 + w
+            x[..., 2] *= 1 - w
+        if L.get("sat") is not None:
+            g = x.mean(2, keepdims=True)
+            x = g + (x - g) * L["sat"]
+        if L.get("vignette"):
+            if getattr(self, "_vig", None) is None:
+                H, W = x.shape[:2]
+                yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+                d = ((xx / W - 0.5) ** 2 + (yy / H - 0.5) ** 2) / 0.5
+                self._vig = (1 - L["vignette"] * d)[..., None]
+            x *= self._vig
+        if L.get("grain"):
+            H, W = x.shape[:2]
+            rng = np.random.default_rng(int(t * FPS + 0.5))
+            n = rng.normal(0, 1, (H // 2, W // 2)).astype(np.float32)
+            n = cv2.resize(n, (W, H), interpolation=cv2.INTER_LINEAR)
+            x += n[..., None] * L["grain"]
+        return (np.clip(x, 0, 1) * 255).astype(np.uint8)
+
+    # 转场：同名同类的块插值位置和大小（形变），其余块淡入淡出
+    def _frame(self, t):
         S = self.S
         k = next((i for i, s in enumerate(self.shots) if t < s["t1"]), len(self.shots) - 1)
         shot = self.shots[k]
@@ -734,12 +902,32 @@ class Renderer:
             enc.stdin.write(self.frame(i / FPS).tobytes())
         enc.stdin.close()
         enc.wait()
-        p = self.job["portrait"]
-        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", tmp, "-ss", str(p.get("start", 0)), "-t", f"{dur:.3f}",
-                        "-i", os.path.expanduser(p["src"]), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac",
-                        "-b:a", "192k", "-shortest", out], check=True)
+        p = self.job.get("portrait")
+        M = self.music
+        cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", tmp]
+        if M:
+            # 配乐：从节拍表对齐的位置开始取；有口播时人声一响配乐自动让开（侧链压缩）；统一到 -14 LUFS
+            msrc = os.path.join(self.base, os.path.expanduser(M["src"]))
+            cmd += ["-ss", f"{max(0.0, self.beats.offset):.3f}", "-t", f"{dur + 0.5:.3f}", "-i", msrc]
+            lead = max(0.0, -self.beats.offset)  # 歌比片段晚开始（落点前的拍子不够）就在前面垫静音
+            g = M.get("gain_db", 0)
+            fo = max(0.0, dur - M.get("fade_out", 0.6))
+            mus = f"[1:a]adelay={int(lead * 1000)}:all=1,volume={g}dB,afade=t=out:st={fo:.3f}:d={M.get('fade_out', 0.6)},atrim=0:{dur:.3f}"
+            if p and M.get("voice", True):
+                cmd += ["-ss", str(p.get("start", 0)), "-t", f"{dur:.3f}", "-i", os.path.expanduser(p["src"])]
+                fc = (f"{mus}[m];[2:a]asplit[v][sc];[m][sc]sidechaincompress=threshold=0.03:ratio=8:attack=15:release=350[md];"
+                      f"[md][v]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5[a]")
+            else:
+                fc = f"{mus},loudnorm=I=-14:TP=-1.5[a]"
+            cmd += ["-filter_complex", fc, "-map", "0:v", "-map", "[a]"]
+        elif p:
+            cmd += ["-ss", str(p.get("start", 0)), "-t", f"{dur:.3f}", "-i", os.path.expanduser(p["src"]), "-map", "0:v", "-map", "1:a"]
+        else:
+            cmd += ["-map", "0:v"]
+        cmd += ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-t", f"{dur:.3f}", out]
+        subprocess.run(cmd, check=True)
         os.remove(tmp)
-        print("done", out, f"{dur:.2f}s", " / ".join(f"{s['template']} {s['t0']:.1f}-{s['t1']:.1f}" for s in self.shots))
+        print("done", out, f"{dur:.2f}s", " / ".join(f"{s['template']} {s['t0']:.2f}-{s['t1']:.2f}" + (f"（{len(s['cuts'])} 切）" if s.get("cuts") else "") for s in self.shots))
 
 
 # ---------------------------------------------------------------- 线框图（模板总表里的预览）
@@ -749,7 +937,8 @@ def wire(tid, out, style="koubo"):
     W, H = S.W, S.H
     im = Image.new("RGB", (W, H), (236, 232, 224))
     d = ImageDraw.Draw(im)
-    f = S.font("title", 64)
+    role = next(r for r in ("title", "subtitle") if r in S.d["fonts"])  # 线框图里的中文标注
+    f = S.font(role, 64)
     bgt = tpl.get("background", {}).get("type", "paper")
     if bgt == "content":
         d.rectangle((0, 0, W, H), fill=(186, 205, 222))
@@ -787,10 +976,12 @@ def wire(tid, out, style="koubo"):
         elif s in ("title", "subtitle"):
             ax, ay = L["anchor"][0] * W, L["anchor"][1] * H
             anchor = {"center": "mm", "left": "lm", "right": "rm"}[L.get("align", "center")]
-            txt = "标题" if s == "title" else "字幕在这里"
-            fs = S.font("title", 120 if s == "title" else 60)
+            txt = (L.get("key") or "标题") if s == "title" else "字幕在这里"
+            fs = S.font(role, 120 if s == "title" else 60)
+            if s == "title" and L.get("key") and L.get("text_style"):
+                fs = S.font(role, max(40, int(S.text_style(L["text_style"])["size"] * H * 0.8)))
             d.text((ax, ay), txt, font=fs, fill=(255, 210, 63) if s == "title" else "white", anchor=anchor, stroke_width=6, stroke_fill=(30, 30, 30))
-    d.text((40, H - 60), f"{tpl['name']}（{tpl['id']}）", font=S.font("title", 52), fill=(60, 60, 60), anchor="ls")
+    d.text((40, H - 60), f"{tpl['name']}（{tpl['id']}）", font=S.font(role, 52), fill=(60, 60, 60), anchor="ls")
     im.resize((W // 3, H // 3), Image.LANCZOS).save(out, quality=88)
 
 

@@ -1,0 +1,51 @@
+{
+ "id": "vlog-inset",
+ "name": "画中画弹窗",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容 + 小窗",
+ "summary": "全屏素材上弹出一个小一圈的圆角画面（另一段素材，通常是人物特写），停一拍半再收掉，回到全屏。用来在标题段里插一个人物近景。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容 + 圆角小窗",
+  "9 动效与花字": "小窗弹出",
+  "14 配乐与卡点": "小窗在第 1 拍弹出，第 3 拍收"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "content",
+   "shape": "roundrect",
+   "box": [
+    0.14,
+    0.3,
+    0.72,
+    0.36
+   ],
+   "radius": 0.02,
+   "shadow": true,
+   "content": -1,
+   "enter": "pop",
+   "enter_dur": 0.2,
+   "at_beat": 1,
+   "until_beat": 3
+  },
+  {
+   "slot": "title",
+   "key": "big",
+   "anchor": [
+    0.5,
+    0.42
+   ],
+   "text_style": "title_serif_xl"
+  }
+ ]
+}

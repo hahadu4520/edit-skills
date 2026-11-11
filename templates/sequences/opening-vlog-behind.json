@@ -1,0 +1,52 @@
+{
+ "id": "opening-vlog-behind",
+ "name": "字在人后开场",
+ "kind": "sequence",
+ "status": "△",
+ "summary": "钩子停 4 拍 → 落点上超大衬线字出现在人身后，停 4 拍 → 每半拍快切 8 拍 → 衬线标题段每拍换 4 拍 → 结尾重音落在最后一个镜头，停 4 拍。",
+ "inputs": {
+  "titles": [
+   "tag_l",
+   "tag_r",
+   "big",
+   "note",
+   "title",
+   "sub"
+  ],
+  "content": "第 0 段钩子，第 1 段是人站在画面中间的全身或半身（要抠像），后面快切素材",
+  "music": "同 opening-vlog-beat"
+ },
+ "timing": "beats",
+ "transition": {
+  "type": "cut"
+ },
+ "shots": [
+  {
+   "template": "vlog-full-tags",
+   "beats": 4,
+   "content": 0
+  },
+  {
+   "template": "vlog-title-behind",
+   "beats": 4,
+   "content": 1,
+   "on_drop": true
+  },
+  {
+   "template": "vlog-full-tags",
+   "beats": 8,
+   "cut_every": 0.5,
+   "content": 2
+  },
+  {
+   "template": "vlog-title",
+   "beats": 4,
+   "cut_every": 1
+  },
+  {
+   "template": "vlog-title",
+   "beats": 4,
+   "content": -1
+  }
+ ]
+}

@@ -26,15 +26,26 @@
 | <img src="shots/dashed-cutout.jpg" width="90"> | `dashed-cutout` | 虚线抠像 | 全屏内容 + 抠像 | 人像、素材、抠像 | △ |
 | <img src="shots/full-portrait.jpg" width="90"> | `full-portrait` | 全屏人像 | 全屏人像 | 人像 | ✓ |
 
+ins 感 vlog（`styles/vlog.json`）的镜头模板。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 衬线标题）。
+
+| 线框 | id | 名字 | 版式类 | 要什么 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| <img src="shots/vlog-full-tags.jpg" width="90"> | `vlog-full-tags` | 全屏素材 + 角标 | 全屏内容 | 素材 | △ |
+| <img src="shots/vlog-title.jpg" width="90"> | `vlog-title` | 衬线大标题 | 全屏内容 | 素材 | △ |
+| <img src="shots/vlog-title-behind.jpg" width="90"> | `vlog-title-behind` | 字在人后 | 全屏内容 + 抠像 | 素材（画面里要有人）、抠像 | △ |
+| <img src="shots/vlog-inset.jpg" width="90"> | `vlog-inset` | 画中画弹窗 | 全屏内容 + 小窗 | 素材 | △ |
+
 ### 片段模板（`sequences/`）
 
-几个镜头模板按字幕句数串起来，加转场。现在三个都是开头。
+几个镜头模板按字幕句数（口播）或配乐拍数（vlog）串起来，加转场。现在都是开头。
 
 | id | 名字 | 镜头顺序 | 要什么 |
 | --- | --- | --- | --- |
 | `opening-sticker` | 贴纸钩子开场 | 描边贴纸人（2 句）→ 卡片圆窗（2 句）→ 虚化圆窗 + 素材铺满 | 标题 `hook`、`topic`；1–2 段素材 |
 | `opening-slant` | 斜切开场 | 斜切分屏（2 句）→ 宽银幕框（2 句）→ 虚线抠像 | 标题 `hook`；1–3 段素材 |
 | `opening-pullback` | 全屏收圆窗开场 | 全屏人像（2 句）→ 虚化圆窗（1 句）→ 换素材铺满（1 句）→ 三明治竖排 | 标题 `hook`；1–2 段素材 |
+| `opening-vlog-beat` | ins 感卡点开场 | 钩子（4 拍，配乐前奏）→ 落点进鼓，每半拍硬切（8 拍）→ 衬线大标题压住、底下继续每半拍换（8 拍）→ 结尾重音落在收尾镜头（4 拍） | 配乐 + 节拍表；`tag_l` `tag_r` `title` `note` `sub`；钩子 1 段 + 快切 8–16 段 + 收尾 1 段 |
+| `opening-vlog-behind` | 字在人后开场 | 钩子（4 拍）→ 落点上超大衬线字压在人身后（4 拍）→ 每半拍快切（8 拍）→ 衬线标题每拍换（4 拍）→ 收尾（4 拍） | 同上，加 `big`；第 2 段素材要有人站在画面中间 |
 
 元件模板（字幕样式、花字样式、标题样式）现在放在风格文件的 `text` 一节里，模板按名字引用；以后多了再拆出来。
 
@@ -82,6 +93,8 @@
 }
 ```
 
+按拍排（vlog）：镜头写 `beats`（占几拍）代替 `cues`；`cut_every` 是几拍换一段素材（0.5 = 半拍），素材从 `content` 那段开始往后轮，跨镜头接着轮；`on_drop: true` 的镜头正好从配乐落点开始，前面的镜头落在前奏里。图层可以写 `at_beat`（镜头开始后第几拍才出现）、`until_beat`（第几拍收掉）、`key`（用 `titles` 里的哪一条文字，一个镜头可以有好几行字）、`behind_subject`（字在人后：把背景画面里的人抠出来盖回字上）、`content`（这一块固定用第几段素材，-1 是最后一段）。
+
 形变转场：前后两个镜头里同一个 `slot`、都是 `rect / roundrect / circle` 的块，位置、大小、圆角一起插值，看起来是同一个画面在变；其他块淡入淡出。
 
 ### 任务文件（每集一份）
@@ -97,6 +110,26 @@
   "split": [2, 3, 99],                       // 可选：按这一集的句子长短，改片段模板里每个镜头占几句
   "titles": { "hook": "这一刀\n差点白挨", "topic": "病程线" }
 }
+```
+
+vlog 卡点开头的任务文件不用口播原片，换成配乐：
+
+```jsonc
+{
+  "style": "vlog",
+  "sequence": "opening-vlog-beat",
+  "music": { "src": "house.wav", "beats": "house.beats.json", "start": "auto" },  // auto：按落点对齐；也可以写歌里的秒数
+  "content": [{ "src": "hook.mp4" }, { "src": "c01.mp4", "start": 1.2 }, …, { "src": "selfie.mp4", "crop": [0, 0, 1, 0.75] }],
+  "titles": { "tag_l": "atmosphere.daily", "tag_r": "in shanghai", "title": "Thailand", "note": "*july 2026 Record\nby du", "sub": "laid-back vibe" },
+  "look": { "grain": 0.04 }      // 可选：覆盖风格的调色
+}
+```
+
+有口播（`portrait`）又有配乐时，人声一响配乐自动让开；成片统一到 -14 LUFS。配乐和节拍表：
+
+```bash
+python beatgen.py house house.wav            # 合成一段配乐 + house.beats.json（house / lofi / pop）
+python beats.py 曲库的歌.mp3 --start 32 --dur 15   # 现成的歌：测出节拍表
 ```
 
 ```bash

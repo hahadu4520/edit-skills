@@ -1,0 +1,62 @@
+{
+ "id": "vlog-title",
+ "name": "衬线大标题",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "素材铺满，白色细衬线英文大标题压在画面中下部，右上一行斜体手写感日期，左下一行小写副标。标题不动、底下素材按拍快切，观众会把这一串读成一个整体。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容",
+  "9 动效与花字": "衬线大标题 + 斜体小注 + 小写副标，卡在落点淡入",
+  "11 布景、配色与字体": "Playfair 衬线 + 斜体",
+  "14 配乐与卡点": "标题在落点出现，素材每半拍一换"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "title",
+   "anchor": [
+    0.5,
+    0.62
+   ],
+   "text_style": "title_serif",
+   "enter": "fade",
+   "enter_dur": 0.25
+  },
+  {
+   "slot": "title",
+   "key": "note",
+   "anchor": [
+    0.74,
+    0.548
+   ],
+   "text_style": "note_italic",
+   "enter": "fade",
+   "enter_dur": 0.3,
+   "at_beat": 1
+  },
+  {
+   "slot": "title",
+   "key": "sub",
+   "anchor": [
+    0.2,
+    0.688
+   ],
+   "align": "left",
+   "text_style": "sub_italic",
+   "enter": "fade",
+   "enter_dur": 0.3,
+   "at_beat": 1
+  }
+ ]
+}

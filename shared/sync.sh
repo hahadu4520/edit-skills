@@ -14,6 +14,7 @@ for s in koubo-edit; do
   d="plugins/$s/skills/$s/scripts/templates"
   rm -rf "$d/library"; mkdir -p "$d/library/templates"
   cp shared/templates/engine.py "$d/"
+  cp shared/music/beatgen.py shared/music/beats.py "$d/"
   cp -R templates/shots templates/sequences "$d/library/templates/"
   cp -R styles "$d/library/"
   echo "已同步 → $d"
