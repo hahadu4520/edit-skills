@@ -279,6 +279,7 @@ segs.json 每段可写 `"trans"`，表示从上一段切进这一段的方式，
 
    | Agent | 怎么在侧边栏打开 |
    |---|---|
+   | 有 Artifact 工具（claude.ai、Claude App 里的对话和云端会话）：**优先用这个** | 不跑 serve。`review.py export <目录> <输出目录> --video <成片.mp4>`（版式模板出的片加 `--style template`），用 Artifact 工具发布 `<输出目录>/index.html`：`files` 带上 `video.mp4` 和 `thumbs/*.jpg`，`capabilities` 写 `{"db": {}}`。审片台就在对话里打开。用户点「提交」后，用 ArtifactData 读集合 `review` 里的 `submit_<版本>`，存成 json，再 `review.py import <目录> <json>`，之后 changes / apply / done 照常 |
    | Claude 桌面版 | 先跑 `review.py launch <工作目录>` 写好 `.claude/launch.json`，再用预览工具启动「审片台」，它会在右侧 Browser 面板打开（不用自己跑 serve） |
    | Codex 桌面版 | 用内置浏览器（`@Browser`）新开标签打开这个地址 |
    | Cursor | 用内置浏览器工具打开这个地址；用户点聊天里的 localhost 链接也会在内置浏览器打开 |

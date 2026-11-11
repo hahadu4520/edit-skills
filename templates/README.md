@@ -148,6 +148,8 @@ python shared/review/review.py serve <工作目录> --style template --video <�
 python shared/review/review.py apply <工作目录>    # 把修改单写回任务文件，再 render，再 done
 ```
 
+在 Claude 对话里（有 Artifact 工具）不用起本地服务：`review.py export <工作目录> <输出目录> --style template --video <这一版>.mp4`，把输出目录发布成 Artifact（带 `db` 能力），审片台就在对话里打开，提交的修改单存在页面的 db 里，Agent 读回来 `review.py import` 再 apply。
+
 审片台调 `engine.py plan` 拿时间轴，画出镜头、转场、快切、拍点、标题、字幕几条轨。镜头能换版式（只列这个风格开放的镜头模板，△ 标「待试」，✗ 灰掉）、改占几句或几拍、换素材、调取景；转场选形变、叠化、硬切；标题和字幕直接改字。本集设置里填「存为模板」，apply 时把这一版的镜头顺序存成 `templates/sequences/my-<时间>.json`，挂到风格里，状态 △。
 
 第一次用到抠像时，会把两个 MediaPipe 模型（人像分割、人脸位置，共约 16MB）下载到 `~/.cache/edit-skills/models`。

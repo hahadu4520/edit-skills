@@ -296,7 +296,13 @@ document.querySelectorAll('#items [data-r]').forEach(d=>d.onclick=()=>{closeDraw
 $('#json').textContent=JSON.stringify(payload(),null,1);build();saveDraft()}
 function payload(){return{video:D.videoName,style:D.style,from:D.ver,to:D.next,changes:[...R].sort((a,b)=>a.t-b.t).map(r=>{const e=r.el&&byId(r.el);return{n:r.id,t:r.t,element:e?{id:e.id,track:TN[e.track],name:label(e),source:e.src||null}:null,
 set:Object.fromEntries(Object.entries(r.ch).map(([k,[a,b]])=>[k,{from:a,to:b}])),ask_ai:r.text||null}})}}
-let dt=null;function saveDraft(){clearTimeout(dt);dt=setTimeout(()=>fetch('draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(R)}).catch(()=>{}),400)}
+// 两种用法：本地 review.py serve（POST 回本机）；或发布成 Claude 里的 Artifact（D.mode==='artifact'，修改单存进页面自己的 db，Claude 读）
+const DB=D.mode==='artifact'&&window.claude?claude.use('db').catch(()=>null):Promise.resolve(null);
+async function post(path,body){if(D.mode!=='artifact'){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);return j}
+const db=await DB;if(!db)throw new Error('这里存不了修改单，请在 Claude 里打开这个页面');
+const doc=path==='draft'?{ver:D.ver,items:JSON.stringify(body),at:Date.now()}:{...body,done:false,at:Date.now()};
+await db.doc(`review/${path}_${D.ver}`).set(doc);return{path:`已存进页面（${path}_${D.ver}）`}}
+let dt=null;function saveDraft(){clearTimeout(dt);dt=setTimeout(()=>post('draft',R).catch(()=>{}),400)}
 
 v.addEventListener('timeupdate',()=>{$('#tc').textContent=fmt(v.currentTime)+' / '+fmt(D.duration);moveph()});
 (function loop(){if(!v.paused){$('#ph').style.left=v.currentTime*pps+'px';subPreview();overlays()}requestAnimationFrame(loop)})();
@@ -312,9 +318,11 @@ function openDrawer(){closePop();$('#drawer').hidden=false;$('#scrim').hidden=fa
 function closeDrawer(){$('#drawer').hidden=true;$('#scrim').hidden=true}
 $('#open').onclick=openDrawer;$('#dclose').onclick=closeDrawer;$('#scrim').onclick=closeDrawer;
 const submit=async()=>{cleanup();render();if(!R.length){$('#saved').textContent='还没有修改';return}
-try{const r=await fetch('submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
-openDrawer();$('#saved').textContent='已提交';$('#items').insertAdjacentHTML('afterbegin',`<div class="check">已提交 ${R.length} 处。回到 Agent 说一声「改好了」，它会按修改单出 ${esc(D.next)}。<br><span class="hint">${esc(j.path)}</span></div>`)}
+try{const j=await post('submit',payload());
+openDrawer();$('#saved').textContent='已提交';$('#items').insertAdjacentHTML('afterbegin',`<div class="check">已提交 ${R.length} 处。回到对话里说一声「改好了」，Claude 会按修改单出 ${esc(D.next)}。<br><span class="hint">${esc(j.path)}</span></div>`)}
 catch(err){$('#saved').textContent='提交失败：'+err.message}};$('#save').onclick=submit;$('#save2').onclick=submit;
 addEventListener('resize',closePop);
 render();
+// Artifact 里：接着上次没提交的草稿改
+DB.then(async db=>{if(!db||R.length)return;try{const d=await db.doc(`review/draft_${D.ver}`).get();const it=d&&d.data?d.data():d;if(it&&it.items){R=JSON.parse(it.items);render()}}catch(e){}});
 </script>

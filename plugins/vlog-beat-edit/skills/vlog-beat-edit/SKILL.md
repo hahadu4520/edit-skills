@@ -94,7 +94,8 @@ python <SKILL>/scripts/templates/engine.py render <workdir>/opening.json <workdi
 python <SKILL>/scripts/review/review.py serve <workdir> --video <workdir>/vlog_开头.mp4 --no-open
 ```
 
-- 在后台运行 serve，按你所在的 Agent 在侧边栏打开它打印的地址，地址同时发给用户。审片台自己调 `engine.py plan` 读时间轴（镜头、切点、用了哪段素材、文字、拍点），工作目录里有 `opening.json`（或 `job.json`）就认得出。
+- 有 Artifact 工具（claude.ai、Claude App 里的对话）就不跑 serve：`review.py export <workdir> <输出目录> --video <workdir>/vlog_开头.mp4`，用 Artifact 工具发布 `<输出目录>/index.html`（`files` 带 `video.mp4` 和 `thumbs/*.jpg`，`capabilities` 写 `{"db": {}}`），审片台就在对话里打开；用户提交后用 ArtifactData 读集合 `review` 里的 `submit_<版本>`，存成 json，`review.py import <workdir> <json>`，再往下走。
+- 没有 Artifact 工具时，在后台运行 serve，按你所在的 Agent 在侧边栏打开它打印的地址，地址同时发给用户。审片台自己调 `engine.py plan` 读时间轴（镜头、切点、用了哪段素材、文字、拍点），工作目录里有 `opening.json`（或 `job.json`）就认得出。
 - 轨道：**镜头**（换版式、改占几拍、素材快切每半拍 / 每拍 / 每两拍 / 不切）、**转场**、**快切**（每一刀用的素材，能调取景中心）、**拍点**（只读，落点单独标出来，看切点有没有踩在拍上）、**标题**。本集设置里填「存为模板」，提交后存成新片段模板。
 - 用户提交后：
 

@@ -10,6 +10,12 @@
   python review.py apply <工作目录>
       只给版式模板出的片（工作目录里有 job.json）：把修改单里的版式、句数、素材、取景、转场、标题、字幕
       直接写回 job.json，「存为模板」存成新的片段模板；一句话要求打印出来给 Agent 改。然后重新 render。
+  python review.py export <工作目录> <输出目录> [--video 成片.mp4] [--style ...]
+      在 Claude 对话里直接审片：导出一个能发布成 Artifact 的审片台（index.html + 预览视频 + 缩略图），
+      Agent 用 Artifact 工具发布（capabilities={"db": {}}）。用户点「提交」后修改单存进页面的 db，
+      Agent 用 ArtifactData 读 review/submit_<版本>，存成 json，再 import。
+  python review.py import <工作目录> <修改单.json>
+      把从 Artifact 读回来的修改单放进 <工作目录>/review/，之后 changes / apply / done 照常用。
   python review.py launch <工作目录> [--port 8765]
       给 Claude 桌面版写 <工作目录>/.claude/launch.json，让审片台在它的 Browser 侧栏里打开。
 
@@ -699,6 +705,46 @@ def launch(wd, port):
     print(f"已写入 {p}：在 Claude 桌面版里打开预览「审片台」即可。")
 
 
+
+def export(wd, out, video, style):
+    """出一个能发布成 Claude Artifact 的审片台：out/index.html + out/video.mp4（压到 15MB 以内的预览）+ out/thumbs/。
+    页面里点「提交」，修改单存进 Artifact 自己的 db（review/submit_<版本>），Claude 读回来后用 `review.py import` 落盘。"""
+    wd = os.path.abspath(wd); out = os.path.abspath(out); os.makedirs(os.path.join(out, "thumbs"), exist_ok=True)
+    video = os.path.abspath(video or (STYLES[style][2] or find_video)(wd))
+    D = build(wd, video, style)
+    D.pop("saved", None)
+    for i, t in enumerate(D["thumbs"]):
+        src = os.path.join(rdir(wd), "thumbs", os.path.basename(t))
+        dst = os.path.join(out, "thumbs", os.path.basename(t))
+        if os.path.exists(src): open(dst, "wb").write(open(src, "rb").read())
+        D["thumbs"][i] = "thumbs/" + os.path.basename(t)
+    pv = os.path.join(out, "video.mp4")
+    dur = D["duration"]; kbps = max(300, int(13 * 8 * 1024 / max(dur, 1)) - 128)  # 目标 13MB 以内
+    w = 540 if D["H"] >= D["W"] else 960
+    sh("ffmpeg", "-v", "error", "-y", "-i", video, "-vf", f"scale={w}:-2", "-c:v", "libx264", "-preset", "veryfast",
+       "-b:v", f"{kbps}k", "-maxrate", f"{kbps}k", "-bufsize", f"{2 * kbps}k", "-c:a", "aac", "-b:a", "96k",
+       "-movflags", "+faststart", pv)
+    D.update(mode="artifact", video="video.mp4")
+    page = open(os.path.join(HERE, "page.html"), encoding="utf-8").read()
+    html = page.replace("const D=/*DATA*/null;", "const D=" + json.dumps(D, ensure_ascii=False) + ";")
+    html = html.replace("<title>审片台</title>", f"<title>审片台 {D['title']}</title>", 1)
+    open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(html)
+    mb = os.path.getsize(pv) / 1e6
+    print(f"[审片台] 已导出 {out}/index.html，预览视频 {mb:.1f}MB，缩略图 {len(D['thumbs'])} 张")
+    print("发布：Artifact 工具 file_path=index.html，files 里带 video.mp4 和 thumbs/*.jpg，capabilities={\"db\": {}}")
+
+
+def import_sheet(wd, path):
+    """把从 Artifact db 读回来的修改单（review/submit_<版本> 那条文档，存成 json 文件）放进 review/，之后 changes / apply / done 照常用。"""
+    j = jload(path)
+    if "changes" not in j: raise SystemExit("这不是修改单：没有 changes")
+    j["done"] = False
+    j.pop("at", None)
+    out = os.path.join(rdir(wd), f"{j['from']}_to_{j['to']}.json")
+    json.dump(j, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"已放进 {out}（{len(j['changes'])} 处）")
+
+
 def detect(wd):
     for k, (_, ok, _v) in STYLES.items():
         if ok(wd): return k
@@ -707,7 +753,7 @@ def detect(wd):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if len(a) < 2 or a[0] not in ("serve", "changes", "done", "launch", "apply"): raise SystemExit(__doc__)
+    if len(a) < 2 or a[0] not in ("serve", "changes", "done", "launch", "apply", "export", "import"): raise SystemExit(__doc__)
     cmd, wd = a[0], a[1]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d
     if cmd == "serve":
@@ -715,4 +761,6 @@ if __name__ == "__main__":
     elif cmd == "launch": launch(wd, int(opt("--port", 8765)))
     elif cmd == "changes": changes(wd)
     elif cmd == "apply": tmpl_apply(wd)
+    elif cmd == "export": export(wd, a[2], opt("--video"), opt("--style") or detect(wd))
+    elif cmd == "import": import_sheet(wd, a[2])
     else: done(wd)
