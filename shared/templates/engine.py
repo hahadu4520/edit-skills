@@ -569,7 +569,8 @@ class Renderer:
                     if tx:
                         texts[L.get("key") or sh.get("title") or "title"] = tx
             out["shots"].append({"index": k, "template": sh["template"], "t0": round(sh["t0"], 3), "t1": round(sh["t1"], 3),
-                                 "beats": sh.get("beats"), "cut_every": sh.get("cut_every"), "segments": segs, "texts": texts})
+                                 "beats": sh.get("beats"), "cut_every": sh.get("cut_every"), "segments": segs, "texts": texts,
+                                 **{k: sh[k] for k in ("role", "why", "chapter") if k in sh}})
         if self.beats:
             d = out["duration"]
             bs, k = [], 0
@@ -713,6 +714,11 @@ class Renderer:
                 return
         if L.get("until_beat") is not None and lt >= L["until_beat"] * self.beat_len():
             return
+        if L.get("out_beat") is not None:  # 从镜头里第几拍开始淡出（半拍淡完），比如城市名压过第二个镜头再走
+            u = (t - shot["t0"] - L["out_beat"] * self.beat_len()) / (0.5 * self.beat_len())
+            alpha *= float(np.clip(1 - u, 0, 1))
+            if alpha <= 0:
+                return
         if isinstance(L.get("content"), int) and self.contents:
             content = self.contents[L["content"] % len(self.contents)]
         a, sc, rev, dy = self.enter(L, lt)

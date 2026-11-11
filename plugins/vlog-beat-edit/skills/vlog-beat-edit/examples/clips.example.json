@@ -1,0 +1,187 @@
+{
+ "note": "城市电影感的素材表样板：地点名、母题随城市换；标签含义见 SKILL.md「模板二」。",
+ "city": "北京",
+ "city_en": "BEIJING",
+ "clips": [
+  {
+   "src": "~/Movies/北京/hero_wide.mp4",
+   "place": "园林甲",
+   "scale": "wide",
+   "subject": "landmark",
+   "hero": true,
+   "motifs": [
+    "塔"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/hero_close.mp4",
+   "place": "园林甲",
+   "scale": "close",
+   "subject": "landmark",
+   "motifs": [
+    "塔"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/reflection.mp4",
+   "place": "宫城",
+   "scale": "medium",
+   "subject": "building",
+   "image": true,
+   "motifs": [
+    "红色",
+    "屋顶"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/eaves.mp4",
+   "place": "宫城",
+   "scale": "detail",
+   "subject": "building",
+   "motifs": [
+    "红色",
+    "屋顶"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/birds.mp4",
+   "place": "天空",
+   "scale": "medium",
+   "subject": "sky",
+   "motion": "inner"
+  },
+  {
+   "src": "~/Movies/北京/bike.mp4",
+   "place": "街头",
+   "scale": "close",
+   "subject": "people",
+   "motion": "cross",
+   "dir": "l2r"
+  },
+  {
+   "src": "~/Movies/北京/railing.mp4",
+   "place": "园林乙",
+   "scale": "medium",
+   "subject": "landmark",
+   "motifs": [
+    "红色"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/bridge.mp4",
+   "place": "园林乙",
+   "scale": "wide",
+   "subject": "landmark",
+   "motifs": [
+    "拱"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/lion.mp4",
+   "place": "园林乙",
+   "scale": "close",
+   "subject": "object",
+   "motifs": [
+    "狮子"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/knocker.mp4",
+   "place": "胡同",
+   "scale": "detail",
+   "subject": "object",
+   "motifs": [
+    "狮子"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/street.mp4",
+   "place": "胡同",
+   "scale": "wide",
+   "subject": "street"
+  },
+  {
+   "src": "~/Movies/北京/bus.mp4",
+   "place": "胡同",
+   "scale": "close",
+   "subject": "vehicle",
+   "motion": "cross",
+   "occluder": true
+  },
+  {
+   "src": "~/Movies/北京/chess.mp4",
+   "place": "胡同",
+   "scale": "detail",
+   "subject": "object",
+   "motifs": [
+    "棋"
+   ],
+   "action_at": 1.0
+  },
+  {
+   "src": "~/Movies/北京/player.mp4",
+   "place": "胡同",
+   "scale": "medium",
+   "subject": "people",
+   "motifs": [
+    "棋"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/park_man.mp4",
+   "place": "胡同",
+   "scale": "medium",
+   "subject": "people",
+   "motion": "inner"
+  },
+  {
+   "src": "~/Movies/北京/kids.mp4",
+   "place": "胡同",
+   "scale": "medium",
+   "subject": "people",
+   "motion": "inner"
+  },
+  {
+   "src": "~/Movies/北京/rickshaw.mp4",
+   "place": "胡同",
+   "scale": "medium",
+   "subject": "people",
+   "motion": "cross"
+  },
+  {
+   "src": "~/Movies/北京/tassels.mp4",
+   "place": "宫墙边",
+   "scale": "detail",
+   "subject": "object"
+  },
+  {
+   "src": "~/Movies/北京/roof_tree.mp4",
+   "place": "宫墙边",
+   "scale": "medium",
+   "subject": "building",
+   "motifs": [
+    "屋顶"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/cat.mp4",
+   "place": "宫墙边",
+   "scale": "close",
+   "subject": "animal",
+   "motifs": [
+    "屋顶"
+   ]
+  },
+  {
+   "src": "~/Movies/北京/tower.mp4",
+   "place": "宫城",
+   "scale": "wide",
+   "subject": "landmark",
+   "hero": true,
+   "motifs": [
+    "红色",
+    "屋顶"
+   ]
+  }
+ ]
+}

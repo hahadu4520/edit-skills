@@ -6,7 +6,7 @@
   1080,
   1920
  ],
- "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；不调色、不加颗粒，保留原片色调。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
+ "summary": "ins 感 vlog 开头的皮肤：细衬线英文大标题 + 斜体小注 + 细体角标；城市电影感用竖排细宋城市名；不调色、不加颗粒，保留原片色调。来源：2026-11-11 du 给的 vlog 开头示例（日本街拍快切、VLOG / Thailand 标题）。",
  "tokens": {
   "white": "#FFFFFF",
   "ink": "#141414",
@@ -32,6 +32,11 @@
    "C:/Windows/Fonts/msyhbd.ttc#0",
    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc#2",
    "fonts/SmileySans-Oblique.ttf"
+  ],
+  "serif_cn": [
+   "fonts/NotoSerifSC-Light.otf",
+   "/System/Library/Fonts/Supplemental/Songti.ttc#0",
+   "C:/Windows/Fonts/simsun.ttc"
   ]
  },
  "text": {
@@ -81,6 +86,22 @@
    "stroke": 0.002,
    "stroke_color": "ink",
    "shadow": true
+  },
+  "city_cn": {
+   "font": "serif_cn",
+   "size": 0.036,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "line_height": 1.12
+  },
+  "city_en": {
+   "font": "sans_light",
+   "size": 0.0105,
+   "fill": "white",
+   "stroke": 0,
+   "shadow": true,
+   "track": 0.35
   }
  },
  "music": {
@@ -103,11 +124,15 @@
    "vlog-full-tags": "△",
    "vlog-title": "△",
    "vlog-title-behind": "△",
-   "vlog-inset": "△"
+   "vlog-inset": "△",
+   "vlog-plain": "△",
+   "vlog-city-name": "△",
+   "vlog-city-name-out": "△"
   },
   "sequences": {
    "opening-vlog-beat": "△",
-   "opening-vlog-behind": "△"
+   "opening-vlog-behind": "△",
+   "city-cinematic": "△"
   }
  }
 }

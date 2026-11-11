@@ -1,0 +1,46 @@
+{
+ "id": "vlog-city-name-out",
+ "name": "竖排城市名（淡出）",
+ "kind": "shot",
+ "status": "△",
+ "aspect": [
+  "9:16",
+  "3:4"
+ ],
+ "layout_class": "全屏内容",
+ "summary": "接在 vlog-city-name 后面：城市名还在原位，镜头开始后四分之一拍淡出，让字跨过一次切换，两个镜头读成一句。",
+ "needs": [
+  "content"
+ ],
+ "dims": {
+  "1 排版与布局": "全屏内容",
+  "11 布景、配色与字体": "原片色调，不调色",
+  "9 动效与花字": "城市名淡出",
+  "14 配乐与卡点": "开场第二个镜头"
+ },
+ "background": {
+  "type": "content"
+ },
+ "layers": [
+  {
+   "slot": "title",
+   "key": "city",
+   "anchor": [
+    0.5,
+    0.44
+   ],
+   "text_style": "city_cn",
+   "out_beat": 0.25
+  },
+  {
+   "slot": "title",
+   "key": "city_en",
+   "anchor": [
+    0.5,
+    0.515
+   ],
+   "text_style": "city_en",
+   "out_beat": 0.25
+  }
+ ]
+}
